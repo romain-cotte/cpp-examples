@@ -1,5 +1,5 @@
 /**
- * Fenwick tree
+ * Check if a file contains the correct number of separators
  */
 #include <algorithm>
 #include <assert.h>
@@ -30,7 +30,7 @@ int main(int argc, const char **argv) {
 
   string line;
   int count, lineNumber = 1;
-  int refCount = atoi(argv[2].c_str());
+  int refCount = atoi(argv[2]);
   std::ifstream infile(argv[1]);
 
   while (std::getline(infile, line)) {
@@ -39,13 +39,17 @@ int main(int argc, const char **argv) {
       if (line[i] == '|') {
         count++;
       }
-      if (count != refCount) {
-        cout << "Error on line " << lineNumber << endl;
-        cout << line << endl;
-      }
+    }
+    if (count != refCount) {
+      cout << "Error on line " << lineNumber;
+      cout << ", it contains " << count << " separators" << endl;
+      cout << line << endl;
+      return 1;
     }
     lineNumber++;
   }
+
+  cout << "File is correct !" << endl;
 
   printf("Time %d clocks, %.3f milliseconds.\n",
          (int)time,

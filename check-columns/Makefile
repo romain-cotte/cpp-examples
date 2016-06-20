@@ -9,6 +9,9 @@ compile:
 	$(CC) $(CFLAGS) main.cpp -o main
 
 main: compile
-	./$@ test.txt 10 | tee output.out
+	./$@ test.txt 1 | tee output.out
+
+copy:
+	cp ./main ~/bin/check-columns
 
 .PHONY: all main
