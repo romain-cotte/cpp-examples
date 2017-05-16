@@ -21,5 +21,12 @@ threads: threads.o
 threads.o: threads.cpp
 	$(CC) -c threads.cpp $(CFLAGS)
 
+async_timer: async_timer.o
+	$(CC) -o async_timer async_timer.o $(BFLAGS)
+
+async_timer.o: async_timer.cpp
+	$(CC) -c async_timer.cpp
+
+
 clean:
 	rm -f *.o sync_timer
