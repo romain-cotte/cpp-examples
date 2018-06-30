@@ -1,3 +1,4 @@
+#include "util/assert.hpp"
 #include <bits/stdc++.h>
 
 #define SZ(x) (int)(x.size())
@@ -19,18 +20,37 @@ void copy_vector(vi::iterator begin, vi::iterator end, vi &dest) {
   }
 }
 
+template<class BidirIt>
+void copy_vector_generic(BidirIt first, BidirIt last, vi &dest) {
+  dest.clear();
+  while (first != last) {
+    dest.push_back(*first);
+    first++;
+  }
+}
+
 int main(int argc, const char **argv) {
   vi v = {1, 2, 3, 4};
   vi copy;
 
   copy_vector(v.begin(), v.end(), copy);
+  assert_equals(v, copy);
 
-  cout << "Assertions...";
-  assert(v.size() == copy.size());
-  F0(i, SZ(v)) {
-    assert(v[i] == copy[i]);
-  }
-  cout << "OK" << endl;
+  copy_vector_generic(v.begin(), v.end(), copy);
+  assert_equals(v, copy);
+
+  copy_vector_generic(v.rbegin(), v.rend(), copy);
+  reverse(copy.begin(), copy.end());
+  assert_equals(v, copy);
+
+  int arr[] = {4, 5, 6};
+  copy_vector_generic(arr, arr + 3, copy);
+  vi expected_result = {4, 5, 6};
+  assert_equals(copy, expected_result);
+
+  copy_vector_generic(arr + 1, arr + 3, copy);
+  expected_result = {5, 6};
+  assert_equals(copy, expected_result);
 
   return 0;
 }

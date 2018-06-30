@@ -1,4 +1,3 @@
-
 #include <bits/stdc++.h>
 
 using namespace std;
@@ -19,7 +18,7 @@ std::ostream& operator<< (std::ostream& out, const vector<T>& v) {
 }
 
 int lower_bound_1(vi::iterator begin, vi::iterator end, int el) {
-  if (begin != end && el < *begin) return 0;
+  if (begin != end && el <= *begin) return 0;
   vi::iterator _begin = begin, mid;
   while (end - begin > 1) {
     mid = begin + (end - begin)/2;
@@ -55,6 +54,10 @@ int main(int argc, const char **argv) {
   test_lower_bound(v, 3, lower_bound_1);
   test_lower_bound(v, 5, lower_bound_1);
   test_lower_bound(v, 15, lower_bound_1);
+  test_lower_bound(v, 1, lower_bound_1);
+
+  int arr[] = {4, 5, 6};
+  cout << lower_bound(arr, arr + 2, 5) << endl;
 
   return 0;
 }

@@ -1,13 +1,21 @@
 CC=g++
-CXXFLAGS=-std=c++11 -Wall -g -posix -Wfatal-errors
+
+INCLUDE=-I../include
+CXXFLAGS=-std=c++11 -Wall -g -posix -Wfatal-errors $(INCLUDE)
 
 BIN=main
 
 execute:
 	./$(BIN) | tee $(BIN).out
 
-compile:
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) main.cpp -o $(BIN)
+vector.o: ../util/vector.cpp
+	$(CC) $(CXXFLAGS) -c -o $@ $<
+
+assert.o: ../util/assert.cpp
+	$(CC) $(CXXFLAGS) -c -o $@ $<
+
+compile: vector.o assert.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ main.cpp -o $(BIN)
 
 main: compile
 	./$(BIN) | tee $(BIN).out
@@ -15,4 +23,4 @@ main: compile
 .PHONY: main
 
 clean:
-	rm -rf *o main
+	rm -rf *.o main
