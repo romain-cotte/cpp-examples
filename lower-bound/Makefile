@@ -1,17 +1,26 @@
-
 CC=g++
-CFLAGS=-std=c++11 -Wall -g -posix -Wfatal-errors
 
-all: main
+INCLUDE=-I../include
+CXXFLAGS=-std=c++11 -Wall -g -posix -Wfatal-errors $(INCLUDE)
 
-# Compile with boost library : -I/home/romain/lib/boost_1_57_0
-compile:
-	$(CC) -g main.cpp -o main $(CFLAGS)
+BIN=main
+
+execute:
+	./$(BIN) | tee $(BIN).out
+
+vector.o: ../util/vector.cpp
+	$(CC) $(CXXFLAGS) -c -o $@ $<
+
+assert.o: ../util/assert.cpp
+	$(CC) $(CXXFLAGS) -c -o $@ $<
+
+compile: vector.o assert.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ main.cpp -o $(BIN)
 
 main: compile
-	./$@ | tee output.out
+	./$(BIN) | tee $(BIN).out
 
-test:
-	./main | tee output.out
+.PHONY: main
 
-.PHONY: all main
+clean:
+	rm -rf *.o main

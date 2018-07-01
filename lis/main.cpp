@@ -44,8 +44,9 @@ vi lis(const vi &seq) {
     if (!len) {
       tailIndexes.push_back(i);
       len++;
+      // idx = 0;
     } else {
-    idx = lower_bound_generic(tailIndexes.begin(), tailIndexes.end(), seq[i]);
+      idx = lower_bound_generic(tailIndexes.begin(), tailIndexes.end(), seq[i]);
       if (idx == len) {
         previous[i] = tailIndexes[len-1];
         tailIndexes.push_back(i);
@@ -55,6 +56,8 @@ vi lis(const vi &seq) {
         tailIndexes[idx] = i;
       }
     }
+    // res[i] = len;
+    // res[i] = idx+1; sequence which ends at i
   }
 
   for (int i = len-1; i != -1; i = previous[i]) {
