@@ -126,13 +126,7 @@ int main(int argc, const char **argv) {
   RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
   RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
 
-  res = conf->set(name, val, errstr);
-
-  if (res != RdKafka::Conf::CONF_OK) {
-    std::cerr << errstr << std::endl;
-    exit(1);
-  }
-
+  conf->set("metadata.broker.list", brokers, errstr);
 
   RdKafka::Consumer *consumer = RdKafka::Consumer::create(conf, errstr);
   if (!consumer) {
@@ -150,7 +144,7 @@ int main(int argc, const char **argv) {
     exit(1);
   }
 
-  RdKafka::ErrorCode resp = consumer->start(topic, partition, 10);
+  RdKafka::ErrorCode resp = consumer->start(topic, partition, 0);
   if (resp != RdKafka::ERR_NO_ERROR) {
     std::cerr <<
       "Failed to start consumer: " <<
