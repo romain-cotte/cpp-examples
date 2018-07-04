@@ -2,6 +2,11 @@
 main
 output.out
 
+*.grpc.pb.cc
+*.grpc.pb.h
+grpc/greeter_client
+grpc/greeter_server
+
 
 # Compiled Object files
 *.slo
