@@ -3,6 +3,7 @@
 #include <bitset>
 #include <climits>
 #include <cmath>
+#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -43,11 +44,10 @@ static int partition_cnt = 0;
 static int verbosity = 1;
 static long msg_cnt = 0;
 static int64_t msg_bytes = 0;
+
 static void sigterm (int sig) {
   run = false;
 }
-
-
 
 static void print_time () {
   struct timeval tv;
@@ -60,6 +60,7 @@ static void print_time () {
 class ExampleEventCb : public RdKafka::EventCb {
  public:
   void event_cb (RdKafka::Event &event) {
+    cout << "event_cb" << endl;
 
     print_time();
 
@@ -96,7 +97,6 @@ class ExampleEventCb : public RdKafka::EventCb {
 };
 
 
-
 class ExampleRebalanceCb : public RdKafka::RebalanceCb {
 private:
   static void part_list_print(const std::vector<RdKafka::TopicPartition*>&partitions){
@@ -127,27 +127,44 @@ public:
   }
 };
 
-
 void msg_consume(RdKafka::Message* message, void* opaque) {
+  std::cout << "msg_consume:" << message->err() << std::endl;
   switch (message->err()) {
     case RdKafka::ERR__TIMED_OUT:
       break;
 
     case RdKafka::ERR_NO_ERROR:
       /* Real message */
-      std::cout << "Read msg at offset " << message->offset() << std::endl;
-      if (message->key()) {
+      msg_cnt++;
+      msg_bytes += message->len();
+      if (verbosity >= 3)
+        std::cerr << "Read msg at offset " << message->offset() << std::endl;
+      RdKafka::MessageTimestamp ts;
+      ts = message->timestamp();
+      if (verbosity >= 2 &&
+    ts.type != RdKafka::MessageTimestamp::MSG_TIMESTAMP_NOT_AVAILABLE) {
+  std::string tsname = "?";
+  if (ts.type == RdKafka::MessageTimestamp::MSG_TIMESTAMP_CREATE_TIME)
+    tsname = "create time";
+        else if (ts.type == RdKafka::MessageTimestamp::MSG_TIMESTAMP_LOG_APPEND_TIME)
+          tsname = "log append time";
+        std::cout << "Timestamp: " << tsname << " " << ts.timestamp << std::endl;
+      }
+      if (verbosity >= 2 && message->key()) {
         std::cout << "Key: " << *message->key() << std::endl;
       }
-      std::cout << "message payload:" << std::endl;
-      printf(":%.*s\n",
-        static_cast<int>(message->len()),
-        static_cast<const char *>(message->payload()));
+      if (verbosity >= 1) {
+        printf("New message received: %.*s\n",
+               static_cast<int>(message->len()),
+               static_cast<const char *>(message->payload()));
+      }
       break;
 
     case RdKafka::ERR__PARTITION_EOF:
       /* Last message */
-      if (exit_eof) {
+      if (exit_eof && ++eof_cnt == partition_cnt) {
+        std::cerr << "%% EOF reached for all " << partition_cnt <<
+            " partition(s)" << std::endl;
         run = false;
       }
       break;
@@ -194,7 +211,7 @@ int main(int argc, const char **argv) {
   ExampleRebalanceCb ex_rebalance_cb;
   conf->set("rebalance_cb", &ex_rebalance_cb, errstr);
 
-  if (conf->set("group.id",  "consumer-group-1", errstr) != RdKafka::Conf::CONF_OK) {
+  if (conf->set("group.id",  "consumer-group-3", errstr) != RdKafka::Conf::CONF_OK) {
     std::cerr << errstr << std::endl;
     exit(1);
   }
@@ -216,14 +233,22 @@ int main(int argc, const char **argv) {
     exit(1);
   }
 
+  signal(SIGINT, sigterm);
+  signal(SIGTERM, sigterm);
+
+  cout << "ERR__ALL_BROKERS_DOWN" << RdKafka::ERR__ALL_BROKERS_DOWN << endl;
+  cout << "ERR_NO_ERROR" << RdKafka::ERR_NO_ERROR << endl;
+  cout << "ERR__TIMED_OUT" << RdKafka::ERR__TIMED_OUT << endl;
+  cout << "ERR__UNKNOWN_TOPIC" << RdKafka::ERR__UNKNOWN_TOPIC << endl;
+  cout << "ERR__PARTITION_EOF" << RdKafka::ERR__PARTITION_EOF << endl;
+
   /*
    * Consume messages
    */
   while (run) {
+    // Interval in ms
     RdKafka::Message *msg = consumer->consume(1000);
-    // if (!use_ccb) {
-      msg_consume(msg, NULL);
-    // }
+    msg_consume(msg, NULL);
     delete msg;
   }
 
