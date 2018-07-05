@@ -1,7 +1,7 @@
 CC=gcc
 
 INCLUDE=-I../include
-CXXFLAGS=-Wall -g -posix -Wfatal-errors -lz -lpthread -lrt $(INCLUDE)
+CXXFLAGS=-std=c++11 -Wall -g -posix -Wfatal-errors -lz -lpthread -lrt $(INCLUDE)
 KAFKAFLAGS=-lrdkafka++ -lrdkafka -lstdc++
 
 BIN=main
@@ -28,8 +28,11 @@ main_or.o: main_or.cpp
 compile: vector.o assert.o main.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(KAFKAFLAGS) -o $(BIN)
 
-consumer_compile:
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ consumer.cpp -o $(BIN)
+consumer_compile: vector.o assert.o consumer.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(KAFKAFLAGS) -o consumer
+
+kafka_consumer_compile: vector.o assert.o kafka_consumer.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(KAFKAFLAGS) -o kafka_consumer
 
 main_or: compile_or
 	./$@ -C -p 0 -t test
@@ -39,6 +42,9 @@ main: compile
 
 consumer: consumer_compile
 	./$@ | tee $(BIN).out
+
+kafka_consumer: kafka_consumer_compile
+	./$@ | tee $@.out
 
 .PHONY: main
 

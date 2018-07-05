@@ -128,6 +128,9 @@ int main(int argc, const char **argv) {
 
   conf->set("metadata.broker.list", brokers, errstr);
 
+  ExampleRebalanceCb ex_rebalance_cb;
+  conf->set("rebalance_cb", &ex_rebalance_cb, errstr);
+
   RdKafka::Consumer *consumer = RdKafka::Consumer::create(conf, errstr);
   if (!consumer) {
     std::cerr << "Failed to create consumer: " << errstr << std::endl;

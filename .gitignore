@@ -1,5 +1,7 @@
 # My ignore files
 main
+consumer
+kafka_consumer
 output.out
 
 *.grpc.pb.cc
