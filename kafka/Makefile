@@ -22,9 +22,6 @@ main_or.o: main_or.cpp
 compile_or: vector.o assert.o main_or.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(KAFKAFLAGS) -o $(BIN_OR)
 
-main_or.o: main_or.cpp
-	$(CC) $(CXXFLAGS) -c -o $@ $<
-
 compile: vector.o assert.o main.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(KAFKAFLAGS) -o $(BIN)
 

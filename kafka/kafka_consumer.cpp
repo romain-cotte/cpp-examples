@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <iostream>
 #include <iterator>
 #include <list>
@@ -16,8 +17,9 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <sys/time.h>
 #include <time.h>
-// #include <tuple>
+#include <tuple>
 #include <typeinfo>
 #include <vector>
 
@@ -44,6 +46,56 @@ static int64_t msg_bytes = 0;
 static void sigterm (int sig) {
   run = false;
 }
+
+
+
+static void print_time () {
+  struct timeval tv;
+  char buf[64];
+  gettimeofday(&tv, NULL);
+  strftime(buf, sizeof(buf) - 1, "%Y-%m-%d %H:%M:%S", localtime(&tv.tv_sec));
+  fprintf(stderr, "%s.%03d: ", buf, (int)(tv.tv_usec / 1000));
+}
+
+class ExampleEventCb : public RdKafka::EventCb {
+ public:
+  void event_cb (RdKafka::Event &event) {
+
+    print_time();
+
+    switch (event.type())
+    {
+      case RdKafka::Event::EVENT_ERROR:
+        std::cerr << "ERROR (" << RdKafka::err2str(event.err()) << "): " <<
+            event.str() << std::endl;
+        if (event.err() == RdKafka::ERR__ALL_BROKERS_DOWN)
+          run = false;
+        break;
+
+      case RdKafka::Event::EVENT_STATS:
+        std::cerr << "\"STATS\": " << event.str() << std::endl;
+        break;
+
+      case RdKafka::Event::EVENT_LOG:
+        fprintf(stderr, "LOG-%i-%s: %s\n",
+                event.severity(), event.fac().c_str(), event.str().c_str());
+        break;
+
+      case RdKafka::Event::EVENT_THROTTLE:
+  std::cerr << "THROTTLED: " << event.throttle_time() << "ms by " <<
+    event.broker_name() << " id " << (int)event.broker_id() << std::endl;
+  break;
+
+      default:
+        std::cerr << "EVENT " << event.type() <<
+            " (" << RdKafka::err2str(event.err()) << "): " <<
+            event.str() << std::endl;
+        break;
+    }
+  }
+};
+
+
 
 class ExampleRebalanceCb : public RdKafka::RebalanceCb {
 private:
@@ -87,7 +139,8 @@ void msg_consume(RdKafka::Message* message, void* opaque) {
       if (message->key()) {
         std::cout << "Key: " << *message->key() << std::endl;
       }
-      printf("%.*s\n",
+      std::cout << "message payload:" << std::endl;
+      printf(":%.*s\n",
         static_cast<int>(message->len()),
         static_cast<const char *>(message->payload()));
       break;
@@ -112,6 +165,12 @@ void msg_consume(RdKafka::Message* message, void* opaque) {
   }
 }
 
+class ExampleConsumeCb : public RdKafka::ConsumeCb {
+ public:
+  void consume_cb (RdKafka::Message &msg, void *opaque) {
+    msg_consume(&msg, opaque);
+  }
+};
 
 int main(int argc, const char **argv) {
   std::string brokers = "localhost";
@@ -129,6 +188,9 @@ int main(int argc, const char **argv) {
 
   conf->set("metadata.broker.list", brokers, errstr);
 
+  ExampleConsumeCb ex_consume_cb;
+  conf->set("consume_cb", &ex_consume_cb, errstr);
+
   ExampleRebalanceCb ex_rebalance_cb;
   conf->set("rebalance_cb", &ex_rebalance_cb, errstr);
 
@@ -143,15 +205,6 @@ int main(int argc, const char **argv) {
     exit(1);
   }
   std::cout << "% Created consumer " << consumer->name() << std::endl;
-
-  RdKafka::Topic *topic = RdKafka::Topic::create(consumer,
-                                                 topic_str,
-                                                 tconf,
-                                                 errstr);
-  if (!topic) {
-    std::cerr << "Failed to create topic: " << errstr << std::endl;
-    exit(1);
-  }
 
   /*
    * Subscribe to topics
@@ -172,17 +225,10 @@ int main(int argc, const char **argv) {
       msg_consume(msg, NULL);
     // }
     delete msg;
-    consumer->poll(0);
-
   }
+
   consumer->close();
-
-  delete topic;
   delete consumer;
-
-  // consumer->stop(topic, partition);
-  // consumer->poll(1000);
-
 
   return 0;
 }
