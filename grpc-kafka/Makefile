@@ -14,11 +14,31 @@
 # limitations under the License.
 #
 
+# Steps
+
+# protoc -I ./protos --cpp_out=. ./protos/helloworld.proto
+
+# g++ -std=c++11 `pkg-config --cflags protobuf grpc`  -c -o helloworld.pb.o helloworld.pb.cc
+
+# protoc -I ./protos --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./protos/helloworld.proto
+
+# g++ -std=c++11 `pkg-config --cflags protobuf grpc`  -c -o helloworld.grpc.pb.o helloworld.grpc.pb.cc
+
+# g++ -std=c++11 `pkg-config --cflags protobuf grpc`  -c -o greeter_client.o greeter_client.cc
+
+# g++ helloworld.pb.o helloworld.grpc.pb.o greeter_client.o -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc` -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed -ldl -o greeter_client
+
+
+
+
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc`
 CXXFLAGS += -std=c++11
+SRC=src
+BUILD=build
+
 ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
            -lgrpc++_reflection\
@@ -26,43 +46,101 @@ LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
 else
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc`\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
-           -ldl
+           -ldl -Wfatal-errors
 endif
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
-PROTOS_PATH = ./protos
+PROTOS_PATH = ./src/protos
 
 vpath %.proto $(PROTOS_PATH)
 
 all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server
 
-greeter_client: helloworld.pb.o helloworld.grpc.pb.o greeter_client.o
+greeter_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_client.o
+	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
+
+build/greeter_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-greeter_server: helloworld.pb.o helloworld.grpc.pb.o greeter_server.o
+build/greeter_server: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-greeter_async_client: helloworld.pb.o helloworld.grpc.pb.o greeter_async_client.o
-	$(CXX) $^ $(LDFLAGS) -o $@
+greeter_server: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_server.o
+	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
 
-greeter_async_client2: helloworld.pb.o helloworld.grpc.pb.o greeter_async_client2.o
-	$(CXX) $^ $(LDFLAGS) -o $@
 
-greeter_async_server: helloworld.pb.o helloworld.grpc.pb.o greeter_async_server.o
-	$(CXX) $^ $(LDFLAGS) -o $@
+greeter_async_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_client.o
+	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
+
+greeter_async_client2: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_client2.o
+	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
+
+greeter_async_server: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_server.o
+	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
 
 .PRECIOUS: %.grpc.pb.cc
 %.grpc.pb.cc: %.proto
 	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=. --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
 
+.PRECIOUS: ./build/%.grpc.pb.cc
+build/%.grpc.pb.cc: %.proto
+	$(PROTOC) -I $(PROTOS_PATH) --grpc_out=build --plugin=protoc-gen-grpc=$(GRPC_CPP_PLUGIN_PATH) $<
+
+
 .PRECIOUS: %.pb.cc
 %.pb.cc: %.proto
 	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=. $<
 
+.PRECIOUS: ./build/%.pb.cc
+build/%.pb.cc: %.proto
+	$(PROTOC) -I $(PROTOS_PATH) --cpp_out=build $<
+
+
+
+# protoc -I ./protos --cpp_out=. ./protos/helloworld.proto
+# files helloworld.pb.h and helloworld.pb.cc are generated
+# equivalent make:
+#		make helloworld.pb.cc
+# as the file is tagged as precious, the file helloworld.pb.h is kept
+
+# STATUS: OK
+# make build/helloworld.pb.cc
+
+# g++ -std=c++11 `pkg-config --cflags protobuf grpc`  -c -o helloworld.pb.o helloworld.pb.cc
+# equivalent make: make helloworld.pb.o
+
+# STATUS: OK
+
+
+# protoc -I ./protos --grpc_out=. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` ./protos/helloworld.proto
+# helloworld.grpc.pb.h helloworld.grpc.pb.cc are generated
+# equivalent make: make helloworld.grpc.pb.cc
+
+
+# g++ -std=c++11 `pkg-config --cflags protobuf grpc`  -c -o helloworld.grpc.pb.o helloworld.grpc.pb.cc
+# make helloworld.grpc.pb.o
+
+
+# g++ -std=c++11 `pkg-config --cflags protobuf grpc`  -c -o greeter_client.o greeter_client.cc
+
+# g++ helloworld.pb.o helloworld.grpc.pb.o greeter_client.o -L/usr/local/lib `pkg-config --libs protobuf grpc++ grpc` -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed -ldl -o greeter_client
+
+
+build/greeter_client.o: src/greeter_client.cc
+	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -c -o $@
+
+build/greeter_server.o: src/greeter_server.cc
+	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -c -o $@
+
+build/%.o: build/%.cc
+	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -c -o $@
+
+# gcc $(CFLAGS) $< -o $
+
 clean:
-	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server
+	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server build/*
 
 
 # The following is to test your system and ensure a smoother experience.

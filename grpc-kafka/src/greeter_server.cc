@@ -22,7 +22,7 @@
 
 #include <grpc++/grpc++.h>
 
-#include "helloworld.grpc.pb.h"
+#include "../build/helloworld.grpc.pb.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
