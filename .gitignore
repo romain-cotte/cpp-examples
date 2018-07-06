@@ -3,11 +3,11 @@ main
 consumer
 kafka_consumer
 output.out
+greeter_client
+greeter_server
 
 *.grpc.pb.cc
 *.grpc.pb.h
-grpc/greeter_client
-grpc/greeter_server
 
 
 # Compiled Object files
