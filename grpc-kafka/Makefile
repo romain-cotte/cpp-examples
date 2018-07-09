@@ -36,6 +36,8 @@ SYSTEM ?= $(HOST_SYSTEM)
 CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc`
 CXXFLAGS += -std=c++11
+KAFKAFLAGS=-lrdkafka++ -lrdkafka -lstdc++
+
 SRC=src
 BUILD=build
 
@@ -56,10 +58,8 @@ PROTOS_PATH = ./src/protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check greeter_client greeter_server
+all: system-check build/greeter_client build/greeter_server
 
-greeter_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_client.o
-	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
 
 build/greeter_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_client.o
 	$(CXX) $^ $(LDFLAGS) -o $@
@@ -67,8 +67,8 @@ build/greeter_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(B
 build/greeter_server: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
-greeter_server: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_server.o
-	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
+build/account_server: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/account_server.o
+	$(CXX) $^ $(LDFLAGS) $(KAFKAFLAGS) -o $@
 
 
 # greeter_async_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_client.o
@@ -133,6 +133,9 @@ build/greeter_client.o: src/greeter_client.cc
 
 build/greeter_server.o: src/greeter_server.cc
 	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -c -o $@
+
+build/account_server.o: src/account_server.cc
+	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) $(KAFKAFLAGS) -c -o $@
 
 build/%.o: build/%.cc
 	$(CXX) $^ $(CXXFLAGS) $(LDFLAGS) -c -o $@
