@@ -26,6 +26,13 @@
 
 #include <librdkafka/rdkafkacpp.h>
 
+#include "../../build/account.grpc.pb.h"
+
+using account::AddAmountRequest;
+using account::Amount;
+using account::GetAmountRequest;
+using account::Reply;
+
 #define SZ(x) (int)(x.size())
 #define F0(i,n) for(int i=0;i<n;i++)
 #define F1(i,n) for(int i=1;i<=n;i++)
@@ -41,10 +48,11 @@ static bool run = true;
 static bool exit_eof = false;
 static int eof_cnt = 0;
 static int partition_cnt = 0;
-static int verbosity = 1;
+static int verbosity = 3;
 static long msg_cnt = 0;
 static int64_t msg_bytes = 0;
 
+map<string, double> accounts;
 
 static void sigterm (int sig) {
   cout << "sigterm" << endl;
@@ -134,7 +142,7 @@ public:
 };
 
 void msg_consume(RdKafka::Message* message, void* opaque) {
-  std::cout << "msg_consume:" << message->err() << std::endl;
+  // std::cout << "msg_consume:" << message->err() << std::endl;
   switch (message->err()) {
     case RdKafka::ERR__TIMED_OUT:
       break;
@@ -263,5 +271,3 @@ private:
   std::string errstr;
   vector<std::string> topics;
 };
-
-

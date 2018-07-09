@@ -4,8 +4,9 @@ consumer
 kafka_consumer
 kafka_consumer_class
 output.out
-greeter_client
+account_client
 account_server
+greeter_client
 greeter_server
 
 *.grpc.pb.cc
