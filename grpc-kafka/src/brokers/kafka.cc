@@ -119,8 +119,12 @@ public:
     part_list_print(partitions);
 
     if (err == RdKafka::ERR__ASSIGN_PARTITIONS) {
+      RdKafka::TopicPartition *part;
+      for (auto part: partitions) {
+        part->set_offset(0);
+      }
+
       consumer->assign(partitions);
-      partition_cnt = (int) partitions.size();
     } else {
       consumer->unassign();
       partition_cnt = 0;
@@ -204,6 +208,11 @@ public:
     conf->set("metadata.broker.list", brokers, errstr);
     conf->set("consume_cb", &ex_consume_cb, errstr);
     conf->set("rebalance_cb", &ex_rebalance_cb, errstr);
+
+    if (conf->set("auto.offset.reset",  "earliest", errstr) != RdKafka::Conf::CONF_OK) {
+      std::cerr << errstr << std::endl;
+      exit(1);
+    }
 
     if (conf->set("group.id",  consumer_group, errstr) != RdKafka::Conf::CONF_OK) {
       std::cerr << errstr << std::endl;
