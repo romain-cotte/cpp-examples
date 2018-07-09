@@ -2,6 +2,7 @@
 main
 consumer
 kafka_consumer
+kafka_consumer_class
 output.out
 greeter_client
 greeter_server

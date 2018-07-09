@@ -45,7 +45,9 @@ static int verbosity = 1;
 static long msg_cnt = 0;
 static int64_t msg_bytes = 0;
 
+
 static void sigterm (int sig) {
+  cout << "sigterm" << endl;
   run = false;
 }
 
@@ -185,74 +187,85 @@ void msg_consume(RdKafka::Message* message, void* opaque) {
 class ExampleConsumeCb : public RdKafka::ConsumeCb {
  public:
   void consume_cb (RdKafka::Message &msg, void *opaque) {
+    std::cout << "ExampleConsumeCb:" << std::endl;
     msg_consume(&msg, opaque);
   }
 };
 
-int main(int argc, const char **argv) {
-  std::string brokers = "localhost";
-  std::string errstr;
-  std::string topic_str = "test";
-  vector<string> topics = { "test" };
-  std::string mode;
-  std::string debug;
-  int32_t partition = RdKafka::Topic::PARTITION_UA;
-  partition = 0;
-  int64_t start_offset = RdKafka::Topic::OFFSET_BEGINNING;
 
-  RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
+class KafkaConsumer
+{
+public:
+  KafkaConsumer(string brokers_, string consumer_group_, string topic):
+    brokers{brokers_}, consumer_group{consumer_group_} {
+    topics = { topic };
 
-  conf->set("metadata.broker.list", brokers, errstr);
+    conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
+    conf->set("metadata.broker.list", brokers, errstr);
+    conf->set("consume_cb", &ex_consume_cb, errstr);
+    conf->set("rebalance_cb", &ex_rebalance_cb, errstr);
 
+    if (conf->set("group.id",  consumer_group, errstr) != RdKafka::Conf::CONF_OK) {
+      std::cerr << errstr << std::endl;
+      exit(1);
+    }
+
+    consumer = RdKafka::KafkaConsumer::create(conf, errstr);
+    if (!consumer) {
+      std::cerr << "Failed to create consumer: " << errstr << std::endl;
+      exit(1);
+    }
+
+    std::cout << "% Created consumer " << consumer->name() << std::endl;
+
+    RdKafka::ErrorCode err = consumer->subscribe(topics);
+    if (err) {
+      std::cerr << "Failed to subscribe to " << topics.size() << " topics: "
+                << RdKafka::err2str(err) << std::endl;
+      exit(1);
+    }
+
+  };
+
+  ~KafkaConsumer() {
+    cout << "deleting kafka consumer " << consumer->name() << endl;
+    consumer->close();
+    delete consumer;
+  };
+
+  void start() {
+    while (run) {
+      RdKafka::Message *msg = consumer->consume(1000);
+      msg_consume(msg, NULL);
+      delete msg;
+    }
+    cout << "end run" << endl;
+  }
+
+private:
   ExampleConsumeCb ex_consume_cb;
-  conf->set("consume_cb", &ex_consume_cb, errstr);
-
   ExampleRebalanceCb ex_rebalance_cb;
-  conf->set("rebalance_cb", &ex_rebalance_cb, errstr);
+  RdKafka::Conf *conf;
+  RdKafka::KafkaConsumer *consumer;
+  std::string brokers;
+  std::string consumer_group;
+  std::string errstr;
+  vector<std::string> topics;
+};
 
-  if (conf->set("group.id",  "consumer-group-3", errstr) != RdKafka::Conf::CONF_OK) {
-    std::cerr << errstr << std::endl;
-    exit(1);
-  }
 
-  RdKafka::KafkaConsumer *consumer = RdKafka::KafkaConsumer::create(conf, errstr);
-  if (!consumer) {
-    std::cerr << "Failed to create consumer: " << errstr << std::endl;
-    exit(1);
-  }
-  std::cout << "% Created consumer " << consumer->name() << std::endl;
-
-  /*
-   * Subscribe to topics
-   */
-  RdKafka::ErrorCode err = consumer->subscribe(topics);
-  if (err) {
-    std::cerr << "Failed to subscribe to " << topics.size() << " topics: "
-              << RdKafka::err2str(err) << std::endl;
-    exit(1);
-  }
+int main(int argc, const char **argv) {
 
   signal(SIGINT, sigterm);
   signal(SIGTERM, sigterm);
 
-  cout << "ERR__ALL_BROKERS_DOWN" << RdKafka::ERR__ALL_BROKERS_DOWN << endl;
-  cout << "ERR_NO_ERROR" << RdKafka::ERR_NO_ERROR << endl;
-  cout << "ERR__TIMED_OUT" << RdKafka::ERR__TIMED_OUT << endl;
-  cout << "ERR__UNKNOWN_TOPIC" << RdKafka::ERR__UNKNOWN_TOPIC << endl;
-  cout << "ERR__PARTITION_EOF" << RdKafka::ERR__PARTITION_EOF << endl;
+  KafkaConsumer *kafkaConsumer = new KafkaConsumer("localhost", "consumer-group-4", "test");
+  kafkaConsumer->start();
+  cout << "end" << endl;
 
-  /*
-   * Consume messages
-   */
-  while (run) {
-    // Interval in ms
-    RdKafka::Message *msg = consumer->consume(1000);
-    msg_consume(msg, NULL);
-    delete msg;
-  }
-
-  consumer->close();
-  delete consumer;
+  delete kafkaConsumer;
+  RdKafka::wait_destroyed(5000);
+  cout << "end wait_destroyed" << endl;
 
   return 0;
 }

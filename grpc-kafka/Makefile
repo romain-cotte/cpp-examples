@@ -56,7 +56,7 @@ PROTOS_PATH = ./src/protos
 
 vpath %.proto $(PROTOS_PATH)
 
-all: system-check greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server
+all: system-check greeter_client greeter_server
 
 greeter_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_client.o
 	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
@@ -71,14 +71,14 @@ greeter_server: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/
 	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
 
 
-greeter_async_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_client.o
-	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
+# greeter_async_client: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_client.o
+# 	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
 
-greeter_async_client2: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_client2.o
-	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
+# greeter_async_client2: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_client2.o
+# 	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
 
-greeter_async_server: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_server.o
-	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
+# greeter_async_server: $(BUILD)/helloworld.pb.o $(BUILD)/helloworld.grpc.pb.o $(BUILD)/greeter_async_server.o
+# 	$(CXX) $^ $(LDFLAGS) -o $(BUILD)/$@
 
 .PRECIOUS: %.grpc.pb.cc
 %.grpc.pb.cc: %.proto
@@ -140,7 +140,7 @@ build/%.o: build/%.cc
 # gcc $(CFLAGS) $< -o $
 
 clean:
-	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server greeter_async_client greeter_async_client2 greeter_async_server build/*
+	rm -f *.o *.pb.cc *.pb.h greeter_client greeter_server build/*
 
 
 # The following is to test your system and ensure a smoother experience.

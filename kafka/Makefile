@@ -28,6 +28,9 @@ compile: vector.o assert.o main.o
 consumer_compile: vector.o assert.o consumer.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(KAFKAFLAGS) -o consumer
 
+kafka_consumer_class_compile: vector.o assert.o kafka_consumer_class.o
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(KAFKAFLAGS) -o kafka_consumer_class
+
 kafka_consumer_compile: vector.o assert.o kafka_consumer.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(KAFKAFLAGS) -o kafka_consumer
 
@@ -43,7 +46,12 @@ consumer: consumer_compile
 kafka_consumer: kafka_consumer_compile
 	./$@ | tee $@.out
 
+kafka_consumer_class: kafka_consumer_class_compile
+
 .PHONY: main
+
+.PRECIOUS: kafka_consumer_class
+
 
 clean:
 	rm -rf *.o main
