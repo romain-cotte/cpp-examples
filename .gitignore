@@ -12,6 +12,8 @@ greeter_server
 *.grpc.pb.cc
 *.grpc.pb.h
 
+*.pb.cc
+*.pb.h
 
 # Compiled Object files
 *.slo
