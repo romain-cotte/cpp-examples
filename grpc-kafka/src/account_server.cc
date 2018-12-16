@@ -78,19 +78,19 @@ void RunServer() {
 
 int main(int argc, const char **argv) {
 
-  // signal(SIGINT, sigterm);
-  // signal(SIGTERM, sigterm);
+  signal(SIGINT, sigterm);
+  signal(SIGTERM, sigterm);
 
-  // KafkaConsumer *kafkaConsumer = new KafkaConsumer("localhost", "consumer-1", "test");
+  KafkaConsumer *kafkaConsumer = new KafkaConsumer("localhost", "consumer-1", "test");
 
-  // std::thread consumer_thread(&KafkaConsumer::start, kafkaConsumer);
+  std::thread consumer_thread(&KafkaConsumer::start, kafkaConsumer);
 
-  // std::thread server_thread(RunServer);
+  std::thread server_thread(RunServer);
 
-  // consumer_thread.join();
-  // cout << "end" << endl;
-  // delete kafkaConsumer;
-  // // server_thread.join();
+  consumer_thread.join();
+  cout << "end" << endl;
+  delete kafkaConsumer;
+  server_thread.join();
 
 
   Amount* amount = new Amount();

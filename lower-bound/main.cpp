@@ -35,26 +35,6 @@ int lower_bound_generic(BidirIt begin, BidirIt end, T el) {
   return end - _begin;
 }
 
-// template<class ForwardIt, class T>
-// ForwardIt lower_bound(ForwardIt first, ForwardIt last, const T& value) {
-//   ForwardIt it;
-//   typename iterator_traits<ForwardIt>::difference_type count, step;
-//   count = distance(first, last);
-
-//   while (count > 0) {
-//     it = first;
-//     step = count / 2;
-//     advance(it, step);
-//     if (*it < value) {
-//       first = ++it;
-//       count -= step + 1;
-//     } else {
-//       count = step;
-//     }
-//   }
-//   return first;
-// }
-
 template<class T>
 void test_lower_bound(vector<T> v, T el, function<int (vi::iterator, vi::iterator, int)> func) {
   int lower = func(v.begin(), v.end(), el);
