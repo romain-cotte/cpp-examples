@@ -24,39 +24,25 @@ typedef tuple<int, int, int> iii;
 typedef vector<ii> vii;
 typedef vector<vector<int> > vvi;
 
-int N, Q;
-int a[100005];
-int segment_tree[100005], interval_left[100005], interval_right[100005];
-int MM;
-
-int most_significant_bit(int n) {
-  int k = 0;
-  while (n >>= 1) {
-    k++;
-  }
-  return 1 << k;
-}
+int N, Q, MM;
+int a[100005], segment_tree[100005];
 
 int build_segment_tree(int node, int lh, int rh) {
-  if (lh == rh) {
-    interval_left[node] = lh;
-    interval_right[node] = rh;
-    return segment_tree[node] = a[lh];
-  }
+  if (lh == rh) { return segment_tree[node] = a[lh]; }
   int mid = (lh + rh) / 2;
   int r1 = build_segment_tree(2 * node + 1,    lh, mid);
   int r2 = build_segment_tree(2 * node + 2, mid+1,  rh);
-  interval_left[node] = lh;
-  interval_right[node] = rh;
   return segment_tree[node] = min(r1, r2);
 }
 
-int query(int node, int lh, int rh) {
-  if (lh <= interval_left[node] && interval_right[node] <= rh) return segment_tree[node];
-  if (interval_right[node] < lh || rh < interval_left[node]) return -1;
+int query(int node, int nl, int nr, int ql, int qr) {
+  if (qr >= nr && ql <= nl) return segment_tree[node];
 
-  int q1 = query(2 * node + 1, lh, rh);
-  int q2 = query(2 * node + 2, lh, rh);
+  if (ql > nr || qr < nl) return -1;
+  int mid = (nl + nr) / 2;
+  
+  int q1 = query(2 * node + 1, nl   , mid, ql, qr);
+  int q2 = query(2 * node + 2, mid+1,  nr, ql, qr);
   if (q1 == -1) return q2;
   if (q2 == -1) return q1;
   return min(q1, q2);
@@ -74,15 +60,11 @@ int main(int argc, const char **argv) {
       cin >> a[i];
     }
 
-    int M = (most_significant_bit(N) << 2) - 1;
-    FI(i, M) {
-      segment_tree[i] = INF;
-    }
     build_segment_tree(0, 0, N-1);
 
     F0(i, Q) {
       cin >> start >> end;
-      cout << query(0, start, end) << endl;
+      cout << query(0, 0, N-1, start, end) << endl;
     }
 
   }
