@@ -42,7 +42,7 @@ int query(int node, int nl, int nr, int ql, int qr) {
 
   if (ql > nr || qr < nl) return -1;
   int mid = (nl + nr) / 2;
-  
+
   int q1 = query(2 * node + 1, nl   , mid, ql, qr);
   int q2 = query(2 * node + 2, mid+1,  nr, ql, qr);
   if (q1 == -1) return q2;
@@ -50,27 +50,17 @@ int query(int node, int nl, int nr, int ql, int qr) {
   return min(q1, q2);
 }
 
-int update(int node, int nl, int nr, int q, int value) {
-  if (q > nr || q < nl) return -1;
+void update(int node, int nl, int nr, int q, int value) {
+  if (q > nr || q < nl) return;
   if (nl == nr) {
-    printf("nl: %d %d\n", nl, q);
-    return segment_tree[node] = a[q] = value;
+    segment_tree[node] = a[q] = value;
+    return;
   }
   int mid = (nl + nr) / 2;
-  int q1 = update(2 * node + 1, nl   , mid, q, value);
-  int q2 = update(2 * node + 2, mid+1,  nr, q, value);
-  int r;
-  if (q1 == -1) {
-    r = q2;
-  } else if (q2 == -1) {
-    r = q1;
-  } else {
-    r = min(q1, q2);
-  }
-  printf("%d %d %d %d %d %d\n", node, r, q1, q2, nl, nr);
-  segment_tree[node] = r;
+  update(2 * node + 1, nl   , mid, q, value);
+  update(2 * node + 2, mid+1,  nr, q, value);
+  segment_tree[node] = min(segment_tree[2*node+1], segment_tree[2*node+2]);
 }
-
 
 int main(int argc, const char **argv) {
   int start, end;
@@ -94,9 +84,9 @@ int main(int argc, const char **argv) {
 
     cout << "--------" << endl;
     printf("Updating 3 to 100\n");
-    update(0, 0, N-1, 3, 100);
+    update(0, 0, N-1, 3, 0);
     cout << "--------" << endl;
- 
+
     F0(i, Q) {
       tie(start, end) = queries[i];
       printf("%d %d: %d\n", start, end, query(0, 0, N-1, start, end));
