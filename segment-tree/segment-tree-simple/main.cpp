@@ -83,8 +83,10 @@ int main(int argc, const char **argv) {
     }
 
     cout << "--------" << endl;
-    printf("Updating 3 to 100\n");
-    update(0, 0, N-1, 3, 0);
+    int idx = 3;
+    int value = 100;
+    printf("Updating %d to %d\n", idx, value);
+    update(0, 0, N-1, idx, value);
     cout << "--------" << endl;
 
     F0(i, Q) {
