@@ -77,5 +77,12 @@ int main(int argc, const char **argv) {
   v = {6, 5, 4};
   assert(lower_bound_generic(v.rbegin(), v.rend(), 6) == 2);
 
+
+  // STL
+
+  v = { 1, 6, 8 };
+  printf("%d", lower_bound(v.begin(), v.end(), 8) - v.begin());
+
+
   return 0;
 }
