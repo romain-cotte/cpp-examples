@@ -81,8 +81,9 @@ int main(int argc, const char **argv) {
   // STL
 
   v = { 1, 6, 8 };
-  printf("%d", lower_bound(v.begin(), v.end(), 8) - v.begin());
-
+  printf("%d\n", lower_bound(v.begin(), v.end(), 8) - v.begin());
+  assert(lower_bound(v.begin(), v.end(), 8) - v.begin() == 2);
+  printf("%d\n", lower_bound(v.begin(), v.end(), 9) - v.begin());
 
   return 0;
 }
