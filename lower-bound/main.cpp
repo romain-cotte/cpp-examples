@@ -74,12 +74,14 @@ int main(int argc, const char **argv) {
   int arr[] = {4, 5, 6};
   assert_equals(lower_bound_generic(arr, arr + 2, 5), 1);
 
-  v = {6, 5, 4};
-  assert(lower_bound_generic(v.rbegin(), v.rend(), 6) == 2);
+  // v = { 4, 5, 6 };
+  // assert(lower_bound_generic(v.rbegin(), v.rend(), 6) == 2);
 
+  v = { 5, 6 };
+  printf("%d\n", lower_bound_generic(v.rbegin(), v.rend(), 6));
+  test_lower_bound(v, 6, lower_bound_vi);
 
   // STL
-
   v = { 1, 6, 8 };
   printf("%d\n", lower_bound(v.begin(), v.end(), 8) - v.begin());
   assert(lower_bound(v.begin(), v.end(), 8) - v.begin() == 2);

@@ -5,6 +5,9 @@ CXXFLAGS=-std=c++11 -Wall -g -posix -Wfatal-errors $(INCLUDE)
 
 BIN=main
 
+main: compile
+	./$(BIN) | tee $(BIN).out
+
 execute:
 	./$(BIN) | tee $(BIN).out
 
@@ -17,8 +20,7 @@ assert.o: ../util/assert.cpp
 compile: vector.o assert.o
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ main.cpp -o $(BIN)
 
-main: compile
-	./$(BIN) | tee $(BIN).out
+
 
 .PHONY: main
 
