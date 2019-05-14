@@ -15,6 +15,29 @@ void assert_equals(std::vector<int> v1, std::vector<int> v2) {
   print_ok();
 }
 
+template<class T>
+void assert_equals(T *arr1, T *arr2) {
+  int N = sizeof(arr1) / sizeof(T);
+  int M = sizeof(arr2) / sizeof(T);
+  assert(N == M);
+  for (int i = 0; i < N; ++i) {
+    assert(arr1[i] == arr2[i]);
+  }
+  print_ok();
+}
+
+template void assert_equals<int>(int *a, int *b);
+
+// void assert_equals(int arr1[], int arr2[]) {
+//   int N = sizeof(arr1) / sizeof(int);
+//   int M = sizeof(arr2) / sizeof(int);
+//   assert(N == M);
+//   for (int i = 0; i < N; ++i) {
+//     assert(arr1[i] == arr2[i]);
+//   }
+//   print_ok();
+// }
+
 void assert_equals(int a, int b) {
   printf("%d == %d", a, b);
   assert(a == b);
