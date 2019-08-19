@@ -22,43 +22,46 @@ typedef vector<string> vs;
 typedef long long ll;
 typedef long long int lli;
 typedef pair<int, int> pii;
+typedef vector<int> vi;
 #define SIZE 100
 
-int tab[SIZE];
 
-int sum(int i) {
-  int total = 0;
-  while (i > 0) {
-    total += tab[i];
-    i -= i & -i;
+/**
+ * Give the prefix sum, be very careful when inserting, it starts from 1
+ * In addition, it should be globally instantiated for initialization of array
+ * bit
+ */
+struct Fenwick_Tree {
+  int bit[SIZE];
+  inline int low_bit(int idx) { return idx&(-idx); }
+  int sum(int idx) {
+    int total = 0;
+    while (idx > 0) {
+      total += bit[idx];
+      idx -= low_bit(idx);
+    }
+    return total;
   }
-  return total;
-}
-void add(int i, int k) {
-  while (i < SIZE) {
-    tab[i] += k;
-    i += i & -i;
+  void insert(int idx, int v) {
+    while (idx < SIZE) {
+      bit[idx] += v;
+      idx += low_bit(idx);
+    }
   }
-}
+  int query(int l, int r) {
+    return sum(r) - sum(l-1);
+  }
+} ft;
 
-int sumFromTo(int f, int t) {
-  return sum(t) - sum(f);
-}
 
 int main(int argc, const char **argv) {
   clock_t time = clock();
-  memset(tab, 0, sizeof(tab));
-  cout << "Hello" << endl;
-  add(3, 10);
-  add(2, 100);
-  cout << "1 " << sum(1) << endl;
-  add(5, 13);
-  cout << "2 " << sum(2) << endl;
-  cout << "2 " << sum(2) << endl;
-  cout << "3 " << sum(3) << endl;
-  cout << "4 " << sum(4) << endl;
-  cout << "7 " << sum(7) << endl;
-  cout << "sumFromTo 4 7 " << sumFromTo(4, 7) << endl;
+  vi v = { 1, 3, 4, 5, 10, 2 };
+  for (int i = 1, l = v.size(); i <= l; ++i) {
+    ft.insert(i, v[i-1]);
+  }
+  // ft.insert(1, 10);
+  printf("%d\n", ft.query(3, 6));
 
   time = clock() - time;
   printf("Time %d clocks, %.3f milliseconds.\n",

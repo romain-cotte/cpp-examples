@@ -73,9 +73,13 @@ typedef pair<int, int> ii;
 // lps[i] = the longest proper prefix of pat[0..i] which is also a suffix of
 // pat[0..i].
 
+// how to know how many characters to be skipped. To know this,
+// we pre-process pattern and prepare an integer array
+// lps[] that tells us the count of characters to be skipped.
+
 // For the pattern "AABAACAABAA",
 // lps[] is [0, 1, 0, 1, 2, 0, 1, 2, 3, 4, 5]
-
+// longest proper prefix which is also suffix
 
 vi lps_naive(char *pat) {
   int S = strlen(pat);

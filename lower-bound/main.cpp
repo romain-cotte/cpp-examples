@@ -87,5 +87,16 @@ int main(int argc, const char **argv) {
   assert(lower_bound(v.begin(), v.end(), 8) - v.begin() == 2);
   printf("%d\n", lower_bound(v.begin(), v.end(), 9) - v.begin());
 
+  v = { 2, 3, 3, 7, 7, 8, 8 };
+  // If the element does not exist, both lower_bound and upper_bound return
+  // the index to the next element
+  printf("%d\n", lower_bound(v.begin(), v.end(), 4) - v.begin());
+  assert(lower_bound(v.begin(), v.end(), 4) - v.begin() == 3);
+  printf("%d\n", upper_bound(v.begin(), v.end(), 4) - v.begin());
+  assert(upper_bound(v.begin(), v.end(), 4) - v.begin() == 3);
+
+  // If the element exists, upper_bound returns the next element from it
+  printf("%d %d\n", upper_bound(v.begin(), v.end(), 7) - v.begin(), *upper_bound(v.begin(), v.end(), 7));
+
   return 0;
 }
