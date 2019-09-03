@@ -81,7 +81,7 @@ typedef pair<int, int> ii;
 // lps[] is [0, 1, 0, 1, 2, 0, 1, 2, 3, 4, 5]
 // longest proper prefix which is also suffix
 
-vi lps_naive(char *pat) {
+vi lps_naive(const char *pat) {
   int S = strlen(pat);
   vi lps(S);
   lps[0] = 0;
@@ -101,7 +101,7 @@ vi lps_naive(char *pat) {
   return lps;
 }
 
-vi lps_opt(char *pat) {
+vi lps_opt(const char *pat) {
   int S = strlen(pat);
   vi lps(S);
   int i = 1, len = 0;
@@ -123,9 +123,25 @@ vi lps_opt(char *pat) {
 }
 
 
+template<typename T>
+vector<int> lps(const T &a) {
+  int n = a.size();
+  vector<int> pi(n);
+  int j = 0;
+  for (int i = 1; i < n; i++) {
+    while (j > 0 && a[i] != a[j]) j = pi[j - 1];
+    j += ((a[i] == a[j]) ? 1 : 0);
+    pi[i] = j;
+  }
+  return pi;
+}
+
 int SP, ST;
 
-int search(char *pat, char *txt) {
+// TODO add research!!
+
+
+int search(const char *pat, const char *txt) {
   int SP = strlen(pat);
   int ST = strlen(txt);
   vi lps = lps_opt(pat);
@@ -150,15 +166,17 @@ int search(char *pat, char *txt) {
 }
 
 int main(int argc, const char **argv) {
-  char *p0 = "AAACAAAA";
+  const char *p0 = "AAACAAAA";
   assert_equals(lps_naive(p0), lps_opt(p0));
-  char *p1 = "ABCABCD";
+  const char *p1 = "ABCABCD";
   assert_equals(lps_naive(p1), lps_opt(p1));
-  char *p2 = "AABAACAABAA";
+  const char *p2 = "AABAACAABAA";
   assert_equals(lps_naive(p2), lps_opt(p2)); // [0, 1, 0, 1, 2, 0, 1, 2, 3, 4, 5]
+  string str(p2);
+  cout << "::" << lps(str) << endl;
 
-  char *pat = "AACA";
-  char *txt = "AACBAACAACA";
+  const char *pat = "AACA";
+  const char *txt = "AACBAACAACA";
   printf("%d\n", search(pat, txt));
 
   return 0;

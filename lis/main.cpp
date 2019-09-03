@@ -68,6 +68,49 @@ vi lis(const vi &seq) {
 }
 
 
+
+/*
+int binary_search(int start, int end, int value) {
+  if (value > v[lis[end]]) return end + 1;
+  while (end - start > 1) {
+    int mid = (start + end)/2;
+    if (v[lis[mid]] < value) {
+      start = mid;
+    } else {
+      end = mid;
+    }
+  }
+  return end;
+}
+
+
+int N = v.size();
+  vi pre(N, -1);
+  lis.resize(N);
+
+  for (int i = 1; i < N; ++i) {
+    int idx = binary_search(-1, len-1, v[i]);
+    if (idx == len) {
+      int p = lis[len-1];
+      lis[len] = i;
+      pre[i] = p;
+      ++len;
+    } else {
+      if (idx > 0) pre[i] = lis[idx-1];
+      lis[idx] = i;
+    }
+  }
+  int u = lis[len-1];
+  vi ans;
+  while (u != -1) {
+    ans.push_back(v[u]);
+    u = pre[u];
+  }
+  reverse(ans.begin(), ans.end());
+  ps(ans);
+*/
+
+
 int main(int argc, const char **argv) {
 
   seq = {};
