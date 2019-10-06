@@ -14,6 +14,9 @@
 #include <string>
 #include <vector>
 
+#include <ext/pb_ds/assoc_container.hpp> // Common file
+#include <ext/pb_ds/tree_policy.hpp> // Including tree_order_statistics_node_update
+
 #define SZ(x) (int)(x.size())
 #define F0(i,n) for(int i=0;i<n;i++)
 #define F1(i,n) for(int i=1;i<=n;i++)
@@ -28,6 +31,7 @@
 #define INF64 1E18
 
 using namespace std;
+using namespace __gnu_pbds;
 
 template<class T1, class T2> void pr(const pair<T1,T2>& x);
 template<class T, size_t SZ> void pr(const array<T,SZ>& x);
@@ -63,16 +67,26 @@ typedef long double ld;
 typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
+typedef tree<int, null_type, less<int>, rb_tree_tag, tree_order_statistics_node_update> ordered_set;
+
 
 int main(int argc, const char **argv) {
-  vi v = {1, 2, 3, 4, 5};
+  ordered_set X;
+  X.insert(1);
+  X.insert(2);
+  X.insert(4);
+  X.insert(8);
+  X.insert(16);
 
-  // Subvector
-  // vi a(v.begin(), v.end()); // == v;
-  // vi a(v.begin()+2, v.begin() + 1); // fails!
-  // vi a(v.begin() + 1, v.begin() + 2); // {1} !!!
-  vi a(v.begin() + 5, v.end()); // {1} !!!
+  cout << *X.find_by_order(1) << endl; // 2
+  cout << *X.find_by_order(2) << endl; // 4
+  cout << *X.find_by_order(4) << endl; // 16
+  cout << (end(X) == X.find_by_order(6)) << endl; // true
 
-  ps(v.front());
+  cout << X.order_of_key(-5) << endl;  // 0
+  cout << X.order_of_key(1) << endl;   // 0
+  cout << X.order_of_key(3) << endl;   // 2
+  cout << X.order_of_key(4) << endl;   // 2
+  cout << X.order_of_key(400) << endl; // 5
   return 0;
 }

@@ -7,12 +7,14 @@
 #include <iostream>
 #include <map>
 #include <queue>
+#include <random>
 #include <set>
 #include <sstream>
 #include <stack>
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <unistd.h>
 
 #define SZ(x) (int)(x.size())
 #define F0(i,n) for(int i=0;i<n;i++)
@@ -64,15 +66,47 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
+template<class T, int S>
+struct Fenwick_Tree {
+  vector<int> bit = vi(S+1);
+  inline int low_bit(int idx) { return idx&(-idx); }
+  T sum(int idx) {
+    T total = 0;
+    int k = idx + 1;
+    while (k > 0) {
+      total += bit[k];
+      k -= low_bit(k);
+    }
+    return total;
+  }
+  void update(int idx, int v) {
+    int k = idx + 1;
+    while (k < S+1) {
+      bit[k] += v;
+      k += low_bit(k);
+    }
+  }
+  T query(int l, int r) {
+    return sum(r) - sum(l-1);
+  }
+};
+
 int main(int argc, const char **argv) {
-  vi v = {1, 2, 3, 4, 5};
+  Fenwick_Tree<ll, 10> ft;
+  vi v = {4, 5, 6, 47, 41, 5, 65, 615, 1, 586};
+  int N = SZ(v);
+  for (int i = 0; i < N; ++i) {
+    ft.update(i, v[i]);
+  }
+  for (int l = 0; l < N; ++l) {
+    for (int r = l; r < N; ++r) {
+      int sum = 0;
+      for (int k = l; k <= r; ++k) {
+        sum += v[k];
+      }
+      assert(sum == ft.query(l, r));
+    }
+  }
 
-  // Subvector
-  // vi a(v.begin(), v.end()); // == v;
-  // vi a(v.begin()+2, v.begin() + 1); // fails!
-  // vi a(v.begin() + 1, v.begin() + 2); // {1} !!!
-  vi a(v.begin() + 5, v.end()); // {1} !!!
-
-  ps(v.front());
   return 0;
 }
