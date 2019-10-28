@@ -71,8 +71,10 @@ int main(int argc, const char **argv) {
   // vi a(v.begin(), v.end()); // == v;
   // vi a(v.begin()+2, v.begin() + 1); // fails!
   // vi a(v.begin() + 1, v.begin() + 2); // {1} !!!
-  vi a(v.begin() + 5, v.end()); // {1} !!!
+  // vi a(v.begin() + 5, v.end()); // {1} !!!
 
-  ps(v.front());
+  // ps(v.front());
+  v  = { 1 };
+  ps(v);
   return 0;
 }
