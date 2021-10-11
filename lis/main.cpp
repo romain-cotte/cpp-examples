@@ -72,15 +72,20 @@ typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
 
+vi seq;
+
 int lis(const vector<int> & a) {
   int n = a.size();
-  vector<int> d(n+1, INF), prev(n+1, -1);
+  vector<int> d(n+1, INF), pr(n+1, -1);
+  vi ind(n+1, -1);
   d[0] = -INF;
   for (int i = 0; i < n; i++) {
     // change for upper_bound for not strictly
     int j = lower_bound(d.begin(), d.end(), a[i]) - d.begin();
     if (d[j-1] <= a[i] && a[i] <= d[j]) {
       d[j] = a[i];
+      ind[j] = i;
+      pr[i] = ind[j-1];
     }
   }
   int ans = 0;
@@ -89,6 +94,15 @@ int lis(const vector<int> & a) {
       ans = i;
     }
   }
+  seq.clear();
+  seq = {};
+  int idx = ind[ans];
+  while (idx != -1) {
+    seq.push_back(idx);
+    idx = pr[idx];
+  }
+  reverse(seq.begin(), seq.end());
+  ps(seq);
   return ans;
 }
 
@@ -139,7 +153,7 @@ int main(int argc, const char **argv) {
 
   // seq = {7, 15, 6, 4, 4, 10, 13 };
   // assert_equals(lis_seq(seq), {4, 10, 13});
-  printf("%d\n", lis({1, 1, 1, 2, 3, 1}));
+  printf("%d\n", lis({10, 7, 3, 9, 20, 12, 6, 8, 15}));
 
   return 0;
 }
