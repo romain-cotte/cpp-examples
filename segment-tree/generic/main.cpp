@@ -71,25 +71,47 @@ typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
 
+/**
+ * Complexity: construction: O(n), query: O(log(n))
+ *       [1;6]
+ *      /     \
+ * [1;3]      [4;6]
+ *   |  \
+ * [1;2] [2;3] ...
+ *   |  \
+ * [1;1] [2;2]
+ *
+ * Pointers are shrinking, we keep as long as intersection is not null
+ * query(3, 5): [1;6] -> [1;3] & [4;6]
+ */
 struct seg_tree {
   struct node {
     bool is_null = false;
-    int v = 0;
     int mn = 0;
-    node set(int _v) {
-      v = _v;
-      mn = _v;
+    int add = 0;
+    int l = -1, r = -1;
+    node set(int _l, int _r, int v) {
+      l = _l; r = _r;
+      mn = v;
       return *this;
     }
+    void apply(int v) {
+      mn += v;
+    }
   };
-
   node unite(const node &a, const node &b) {
+    printf(
+      "unite [%d %d] and [%d %d]: %d and %d\n",
+      a.l, a.r, b.l, b.r, a.mn, b.mn
+    );
     node r;
+    r.l = a.l; r.r = b.r;
     r.mn = min(a.mn, b.mn);
     return r;
   }
 
-  int n; vi a;
+  int n;
+  vi a;
   vector<node> tree;
 
   seg_tree(const vi &v): n(v.size()) {
@@ -98,43 +120,79 @@ struct seg_tree {
     build();
   }
 
-  node _build(int x, int l, int r) {
-    if (l == r) { return tree[x].set(a[l]); }
+  node build(int x, int l, int r) {
+    assert(x < 2*n);
+    if (l == r) { return tree[x].set(l, r, a[l]); }
     int mid = (l + r) / 2;
-    node r1 = _build(2 * x + 1,     l, mid);
-    node r2 = _build(2 * x + 2, mid+1,  r);
+    node r1 = build(2 * x + 1,     l, mid);
+    node r2 = build(2 * x + 2, mid+1,  r);
     return tree[x] = unite(r1, r2);
   }
 
-  node build() { return _build(0, 0, n-1); }
+  node build() { return build(0, 0, n-1); }
 
-  node _query(int x, int nl, int nr, int ql, int qr) {
+  node query(int x, int nl, int nr, int ql, int qr) {
+    assert(x < 2*n);
+    push(x, nl, nr);
     if (ql <= nl && nr <= qr) return tree[x];
     if (qr < nl || nr < ql) return { true };
     int mid = (nl + nr) / 2;
-    node q1 = _query(2 * x + 1, nl   , mid, ql, qr);
-    node q2 = _query(2 * x + 2, mid+1,  nr, ql, qr);
+    node q1 = query(2 * x + 1, nl   , mid, ql, qr);
+    node q2 = query(2 * x + 2, mid+1,  nr, ql, qr);
     if (q1.is_null) return q2;
     if (q2.is_null) return q1;
     return unite(q1, q2);
   }
   node query(int start_idx, int end_idx) {
-    return _query(0, 0, n-1, start_idx, end_idx);
+    return query(0, 0, n-1, start_idx, end_idx);
   }
 
-  void _update(int x, int nl, int nr, int idx, ll value) {
+  void update(int x, int nl, int nr, int idx, ll value) {
     if (idx < nl || nr < idx) return;
     if (nl == nr) {
       a[idx] = value;
-      tree[x].set(value);
+      tree[x].set(nl, nr, value);
       return;
     }
     int mid = (nl + nr) / 2;
-    _update(2 * x + 1, nl   , mid, idx, value);
-    _update(2 * x + 2, mid+1,  nr, idx, value);
+    update(2 * x + 1, nl   , mid, idx, value);
+    update(2 * x + 2, mid+1,  nr, idx, value);
     tree[x] = unite(tree[2*x+1], tree[2*x+2]);
   }
-  void update(int idx, ll value) { return _update(0, 0, n-1, idx, value); }
+  void update(int idx, ll value) { return update(0, 0, n-1, idx, value); }
+
+  void push(int x, int pl, int pr) {
+    if (tree[x].add != 0) {
+      tree[x].apply(tree[x].add); // += (pr-pl+1) * lazy_tree[x];
+      if (pl != pr) {
+        tree[2*x+1].add += tree[x].add; // += -> =
+        tree[2*x+2].add += tree[x].add; // += -> =
+      }
+      tree[x].add = 0;
+    }
+  }
+
+  void update_range(int x, int pl, int pr, int l, int r, ll value) {
+    push(x, pl, pr);
+    if (r < pl || pr < l) return;
+    if (l <= pl && pr <= r) {
+      tree[x].apply(value); // += (pr-pl+1)*value; // tree[x] = value;
+      if (pl != pr) {
+        tree[2*x+1].add += value; // lazy_tree[2*x+1] = value
+        tree[2*x+2].add += value; // lazy_tree[2*x+2] = value
+      }
+      return;
+    }
+
+    int mid = (pl + pr) / 2;
+    update_range(2 * x + 1,    pl, mid, l, r, value);
+    update_range(2 * x + 2, mid+1,  pr, l, r, value);
+    tree[x] = unite(tree[2*x+1], tree[2*x+2]);
+  }
+
+  void update_range(int l, int r, ll value) {
+    update_range(0, 0, n-1, l, r, value);
+  }
 };
 
 
@@ -142,12 +200,24 @@ int main(int argc, const char **argv) {
 
   vi v = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   seg_tree st(v);
+  ps("---");
   ps(st.query(0, 0).mn);
   ps(st.query(0, 1).mn);
   ps(st.query(0, 2).mn);
   ps(st.query(0, 3).mn);
   ps(st.query(0, 4).mn);
   ps(st.query(4, 8).mn);
+
+  st.update_range(0, 4, +100);
+  ps(st.query(0, 0).mn);
+  ps(st.query(1, 1).mn);
+  ps(st.query(2, 2).mn);
+  ps(st.query(3, 3).mn);
+  ps(st.query(4, 4).mn);
+  ps(st.query(5, 5).mn);
+  ps(st.query(6, 6).mn);
+  ps(st.query(0, 8).mn);
+
 
   return 0;
 }
