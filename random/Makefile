@@ -4,7 +4,7 @@ CC=g++
 WARNING_FLAGS=-Wall -Wno-deprecated-declarations -Wno-unused-result -Wfatal-errors
 # SANITIZE_FLAGS=-fsanitize=undefined -fno-sanitize-recover
 SANITIZE_FLAGS=
-CFLAGS=-std=c++17 -O3 $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix
+CFLAGS=-std=c++17 -O0 $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix
 
 all: c
 

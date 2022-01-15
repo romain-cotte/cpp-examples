@@ -76,7 +76,7 @@ mt19937 gen(rd());
 vi v = {10, 50, 100, 9, 0, 1};
 
 struct RandomFreqPropValues {
-  vi v; vector<ll> pre;
+  vi v, w; vector<ll> pre;
   ll sum = 0;
   RandomFreqPropValues(const vi &_v) : v(_v) {
     pre.resize(v.size());
@@ -85,7 +85,13 @@ struct RandomFreqPropValues {
     }
     sum = pre.back();
   }
-
+  RandomFreqPropValues(const vi &_v, const vi &_w) : v(_v), w(_w) {
+    pre.resize(w.size());
+    for (int i = 0; i < (int)w.size(); ++i) {
+      pre[i] = (i? pre[i-1]:0) + w[i];
+    }
+    sum = pre.back();
+  }
   int get() {
     uniform_int_distribution<ll>dist(0, sum);
     ll k = dist(gen);
@@ -95,15 +101,21 @@ struct RandomFreqPropValues {
 };
 
 struct RandomInvFreqPropValues {
-  vi v; vector<ll> pre;
+  vi v, w; vector<ll> pre;
   ll sum = 0;
-
   RandomInvFreqPropValues(const vi &_v) : v(_v) {
     int mx = *max_element(v.begin(), v.end());
-
     pre.resize(v.size());
     for (int i = 0; i < (int)v.size(); ++i) {
       pre[i] = (i? pre[i-1]:0) + max(1, (mx-v[i]));
+    }
+    sum = pre.back();
+  }
+  RandomInvFreqPropValues(const vi &_v, const vi &_w) : v(_v), w(_w) {
+    int mx = *max_element(w.begin(), w.end());
+    pre.resize(w.size());
+    for (int i = 0; i < (int)w.size(); ++i) {
+      pre[i] = (i? pre[i-1]:0) + max(1, (mx-w[i]));
     }
     sum = pre.back();
   }
