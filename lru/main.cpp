@@ -1,6 +1,3 @@
-/**
- * Longuest Increasing Sequence with backtracking
- */
 #include "util/assert.hpp"
 #include "util/vector.hpp"
 
