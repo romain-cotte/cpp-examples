@@ -1,0 +1,22 @@
+CC=g++
+WARNING_FLAGS=-Wall -Wno-deprecated-declarations -Wno-unused-result -Wfatal-errors
+SANITIZE_FLAGS=-fno-sanitize-recover=undefined,integer
+CFLAGS=-std=c++17 -O0 $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g
+LIBS=-lm -lgdal
+# ifdef DEBUG -> -D DEBUG
+
+BIN=main
+
+compile_main:
+	$(CC) $(CFLAGS) -o $(BIN) main.cpp $(LIBS)
+
+debug:
+  g++ -std=c++17 -Wshadow -Wall -g -fuse-ld=gold -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG main.cpp -o main
+
+main: compile_main
+	./main < main.in | tee main.out
+
+clean:
+	rm -rf *.o main
+
+.PHONY: main

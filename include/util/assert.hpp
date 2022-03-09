@@ -1,7 +1,6 @@
 #ifndef UTIL_ASSERT_H
 #define UTIL_ASSERT_H
 
-#include <bits/stdc++.h>
 #include <vector>
 
 void print_ok();

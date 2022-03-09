@@ -1,4 +1,7 @@
 # My ignore files
+.DS_Store
+main.dSYM
+
 main
 consumer
 kafka_consumer

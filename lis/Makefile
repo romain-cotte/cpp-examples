@@ -1,7 +1,7 @@
 CC=g++
 
 INCLUDE=-I../include
-CXXFLAGS=-std=c++11 -Wall -g -posix -Wfatal-errors $(INCLUDE)
+CXXFLAGS=-std=c++11 -Wall -g -Wfatal-errors $(INCLUDE)
 
 BIN=main
 
