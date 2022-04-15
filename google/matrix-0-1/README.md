@@ -36,7 +36,7 @@ by multiplying the number of element:
  ....
 .....
 
-We stop at 4, and we'll have `5*1`, `3*2` => remove indices 2 and 3 in the
+We stop at 4, and we'll have `1*5`, `2*3` => remove indices 2 and 3 in the
 stack.
 
 Be careful: you have to go to the previous one + 1. Example:
@@ -47,3 +47,7 @@ gives: 1 2 3 5 6 2
 Rectangle of 6 goes until index of 5 + 1 ie 4
 
 Complexity: `O(R*C)`
+
+
+
+<!-- https://www.geeksforgeeks.org/largest-rectangle-under-histogram/ -->

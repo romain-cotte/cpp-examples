@@ -109,6 +109,40 @@ int max_area(const RMQ<int> &rmq, int l, int r) {
 
 int R, C;
 
+int sol1(const vector<vi> &mat) {
+  vector<vi> pref(R+1, vi(C+1));
+  for (int r = 0; r < R; ++r) {
+    for (int c = 0; c < C; ++c) {
+      pref[r+1][c+1] = pref[r][c+1] + pref[r+1][c] - pref[r][c];
+      pref[r+1][c+1] += mat[r][c] == 1;
+    }
+  }
+
+  auto get = [&pref](int r1, int c1, int r2, int c2) {
+    return pref[r2+1][c2+1] - pref[r2+1][c1] - pref[r1][c2+1] + pref[r1][c1];
+  };
+
+  int ans = 0;
+  vi vans;
+  for (int r1 = 0; r1 < R; ++r1) {
+    for (int c1 = 0; c1 < C; ++c1) {
+      for (int r2 = r1; r2 < R; ++r2) {
+        for (int c2 = c1; c2 < C; ++c2) {
+          int r = get(r1, c1, r2, c2);
+          if (r == (r2-r1+1) * (c2-c1+1)) {
+            if (remax(ans, get(r1, c1, r2, c2))) {
+              vans = {r1, c1, r2, c2};
+            }
+          }
+        }
+      }
+    }
+  }
+  return ans;
+  // ps(ans, vans);
+}
+
+
 int sol2(const vector<vi> &mat) {
   vector<vi> dp(R+1, vi(C));
   for (int r = 0; r < R; ++r) {
@@ -133,13 +167,16 @@ inline int max_area(const vi &v) {
       int t = st.back();
       st.pop_back();
       remax(ans, v[t] * (st.empty() ? i: i - st.back() - 1));
+      ps(v[t], st.empty() ? i: i - st.back() - 1);
     }
     st.push_back(i);
   }
+  ps("--");
   while (!st.empty()) {
     int t = st.back();
     st.pop_back();
     remax(ans, v[t] * (st.empty() ? n: n - st.back() - 1));
+    ps(v[t], st.empty() ? n: n - st.back() - 1);
   }
   return ans;
 }
@@ -160,35 +197,39 @@ int sol3(const vector<vi> &mat) {
 }
 
 int main(int argc, const char **argv) {
-  R = 300, C = 400;
-  vector<vi> mat(R, vi(C));
-  random_device rd;
-  mt19937
-  gen(chrono::steady_clock::now().time_since_epoch().count());
-  uniform_int_distribution<>dist(0, 1);
-  clock_t t_clock;
+  R = 10, C = 10;
+  // vector<vi> mat(R, vi(C));
+  // random_device rd;
+  // mt19937
+  // gen(chrono::steady_clock::now().time_since_epoch().count());
+  // uniform_int_distribution<>dist(0, 5);
+  // clock_t t_clock;
 
-  float total2 = 0, total3 = 0;
-  for (int tt = 0; tt < 1000; ++tt) {
-    for (int r = 0; r < R; ++r) {
-      for (int c = 0; c < C; ++c) {
-        mat[r][c] = dist(gen);
-      }
-    }
-    // ps("matrix:");
-    // for (vi row: mat) {
-    //   ps(row);
-    // }
-    t_clock = clock();
-    int ans2 = sol2(mat);
-    total2 += ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000;
-    t_clock = clock();
-    int ans3 = sol3(mat);
-    total3 += ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000;
-    assert(ans2 == ans3);
-    ps(ans2, ans3);
-  }
-  ps(total2, total3);
+  // float total2 = 0, total3 = 0;
+  // for (int tt = 0; tt < 1000; ++tt) {
+  //   for (int r = 0; r < R; ++r) {
+  //     for (int c = 0; c < C; ++c) {
+  //       mat[r][c] = dist(gen) < 1 ? 0: 1;
+  //     }
+  //   }
+  //   ps("matrix:");
+  //   for (vi row: mat) {
+  //     ps(row);
+  //   }
+  //   t_clock = clock();
+  //   int ans2 = sol2(mat);
+  //   total2 += ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000;
+  //   t_clock = clock();
+  //   int ans3 = sol3(mat);
+  //   total3 += ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000;
+  //   assert(ans2 == ans3);
+  //   assert(sol1(mat) == ans2);
+  //   ps(ans2, ans3);
+  // }
+  // ps(total2, total3);
+
+  ps(max_area({10, 4, 3, 100, 80, 50, 2}));
+
 
   return 0;
 }
