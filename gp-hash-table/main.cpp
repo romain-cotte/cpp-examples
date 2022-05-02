@@ -1,3 +1,4 @@
+
 #include <algorithm>
 #include <assert.h>
 #include <bitset>
@@ -16,6 +17,8 @@
 #include <string>
 #include <time.h>
 #include <vector>
+
+
 
 #define INF 1E9
 #define INF64 2E18
@@ -68,48 +71,11 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
-int n;
-
-
-int binary_search(const vi &v, int k) {
-  int l = 0, r = v.size()-1;
-  while (l < r) {
-    int mid = (l+r+1)/2;
-    // ps(l, r, mid);
-    if (v[mid] <= k) { // last index lower or equal to k
-      l = mid;
-    } else {
-      r = mid-1;
-    }
-  }
-  return l;
-}
-
-// OR
-int binary_search2(const vi &v, int k) {
-  int l = 0, r = v.size()-1;
-  while (l < r) {
-    int mid = (l+r)/2;
-    // ps(l, r, mid);
-    if (v[mid] < k) { // first index greater or equal to k
-      l = mid + 1;
-    } else {
-      r = mid;
-    }
-  }
-  return l;
-}
-
+#include <ext/pb_ds/assoc_container.hpp>
+using namespace __gnu_pbds;
 
 int main(int argc, const char **argv) {
-  vi v = {1, 2, 3, 4, 5, 6, 7, 8, 10, 15, 100};
-
-  for (int x = v[0]; x <= v.back(); ++x) {
-    ps("===", x);
-    int i = binary_search(v, x);
-    int j = binary_search2(v, x);
-    ps(x, i, j);
-    assert(i == j);
-  }
+  gp_hash_table<int, int> table;
+  ps(table[1]);
   return 0;
 }
