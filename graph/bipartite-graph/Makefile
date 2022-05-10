@@ -1,17 +1,43 @@
-CC=g++
-WARNING_FLAGS=-Wall -Wno-deprecated-declarations -Wno-unused-result -Wfatal-errors
-SANITIZE_FLAGS=-fno-sanitize-recover
-CFLAGS=-std=c++17 -lm -lcrypt -O2 $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix
+PB=C
 
-BIN=main
+CC=g++
+CFLAGS=-std=c++17 -pthread -O0 -Wshadow -Wall -g -posix -Wfatal-errors -Wno-unused-result
+
+all: c
+
+compare:
+	./main < main.in | tee main.out
+	./test < main.in | tee test.out
+
+c:
+	$(CC) $(CFLAGS) main.cpp -o main
+
+debug:
+	g++ -std=c++14 -Wshadow -Wall -o main main.cpp -g -fuse-ld=gold -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG
+	./main < main.in
 
 compile_main:
-	$(CC) $(CFLAGS) main.cpp -o $(BIN)
+	$(CC) $(CFLAGS) main.cpp -o main
 
-main: compile_main
+compile_other:
+	$(CC) $(CFLAGS) other.cpp -o other
+
+compile_gen:
+	$(CC) $(CFLAGS) gen.cpp -o gen
+
+compile_test:
+	$(CC) $(CFLAGS) test.cpp -o test
+
+compile_example:
+	$(CC) $(CFLAGS) $(CPP_DIR)/example.cpp -o $(BUILD_DIR)/example
+
+test: compile_test
+	./test < test.in | tee test.out
+
+main: c
 	./main < main.in | tee main.out
 
-clean:
-	rm -rf *.o main
+gen: compile_gen
+	./gen | tee gen.out
 
-.PHONY: main
+.PHONY: main, sample

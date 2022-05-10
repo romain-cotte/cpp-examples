@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <assert.h>
 #include <bitset>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <functional>
@@ -16,7 +17,6 @@
 #include <string>
 #include <time.h>
 #include <vector>
-#include "sol.cpp"
 
 #define INF 1E9
 #define INF64 2E18
@@ -27,7 +27,6 @@ template<class T1, class T2> void pr(const pair<T1,T2>& x);
 template<class T, size_t SZ> void pr(const array<T,SZ>& x);
 template<class T> void pr(const vector<T>& x);
 template<class T> void pr(const set<T>& x);
-template<class T> void pr(const multiset<T>& x);
 template<class T1, class T2> void pr(const map<T1,T2>& x);
 template<class T1, class T2> void pr(const map<T1,T2>& x);
 template<class... T> void pr(const tuple<T...>& tup);
@@ -45,7 +44,6 @@ template<class T> void prContain(const T& x) {
 template<class T, size_t SZ> void pr(const array<T,SZ>& x) { prContain(x); }
 template<class T> void pr(const vector<T>& x) { prContain(x); }
 template<class T> void pr(const set<T>& x) { prContain(x); }
-template<class T> void pr(const multiset<T>& x) { prContain(x); }
 template<class T1, class T2> void pr(const map<T1,T2>& x) { prContain(x); }
 
 template<class T, size_t... I>
@@ -71,63 +69,38 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
-int n, m;
-vector<vi> G;
-vector<int> vis, parent;
-int cookie;
-
-bool matching(int u) {
-  if (vis[u] == cookie) return false;
-  vis[u] = cookie;
-  for (int v: G[u]) {
-    if (parent[v] == -1) {
-      parent[v] = u;
-      return true;
-    }
-    if (matching(parent[v])) {
-      parent[v] = u;
-      return true;
-    }
-  }
-  return false;
-}
-
-int matches() {
-  int ans = 0;
-  vis.assign(n, false);
-  parent.assign(n, -1);
-  for (int u = 0; u < n; ++u) {
-    ++cookie;
-    ans += matching(u);
-  }
-  return ans;
-}
-
-
-void solve() {
-  scanf("%d%d", &n, &m);
-  G.assign(n, {});
-  for (int i = 0; i < m; ++i) {
-    int u, v; scanf("%d%d", &u, &v);
-    G[u].push_back(v);
-  }
-  int r = sol_matches(G);
-  int s = matches();
-  assert(r == s);
-  printf("%d\n", r);
-}
 
 int main(int argc, const char **argv) {
-  clock_t t_clock = clock();
-  int TT; scanf("%d", &TT);
-  for (int tt = 1; tt <= TT; ++tt) {
-    printf("Case #%d: ", tt);
-    solve();
+  random_device rd;
+  mt19937 gen(chrono::steady_clock::now().time_since_epoch().count());
+
+  int cases = 100;
+  uniform_int_distribution<>dist(2, 100);
+
+  printf("%d\n", cases);
+  for (int tt = 1; tt <= cases; ++tt) {
+    int n = dist(gen);
+    uniform_int_distribution<>dist_n(0, n-1);
+    uniform_int_distribution<>dist_nn(1, n*(n-1));
+    vector<vector<bool>> linked(n, vector<bool>(n));
+    int m = dist_nn(gen);
+    vii p;
+    int tot = 0;
+    for (int i = 0; i < m; ++i) {
+      while (true) {
+        int u = dist_n(gen), v = dist_n(gen);
+        if (!linked[u][v]) {
+          linked[u][v] = true;
+          p.emplace_back(u, v);
+          break;
+        }
+      }
+    }
+    printf("%d %d\n", n, m);
+    for (int i = 0; i < m; ++i) {
+      printf("%d %d\n", p[i].first, p[i].second);
+    }
   }
-  fprintf(
-    stderr,
-    "Elapsed time %.3f milliseconds.\n",
-    ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000
-  );
+
   return 0;
 }
