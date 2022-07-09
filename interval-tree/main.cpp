@@ -9,7 +9,6 @@
 #include <numeric>
 #include <queue>
 #include <random>
-#include <iterator>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -17,8 +16,6 @@
 #include <string>
 #include <time.h>
 #include <vector>
-
-#include "ogrsf_frmts.h"
 
 #define INF 1E9
 #define INF64 2E18
@@ -72,63 +69,80 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
-int main(int argc, const char **argv) {
-  GDALAllRegister();
 
-  GDALDataset *poDS;
+struct IntervalTree {
+  int center = INF;
+  vii start, end;
 
-  poDS = (GDALDataset*) GDALOpenEx("./map/map.shp", GDAL_OF_VECTOR, NULL, NULL, NULL);
-  if (poDS == NULL) {
-      printf("Open failed.\n");
-      exit(1);
-  }
-  printf("%d\n", poDS->GetLayerCount());
-
-  OGRLayer  *poLayer;
-  poLayer = poDS->GetLayer(0);
-  if (poLayer == NULL) {
-    printf("Layer is null\n");
-    exit(1);
+  IntervalTree *left = NULL, *right = NULL;
+  void print() {
+    printf("center: %d\n", center);
+    for (ii p: start) printf("%d %d, ", p.first, p.second);
+    printf("\n");
+    printf("left:\n");
+    if (left != NULL) left->print();
+    printf("right:\n");
+    if (right != NULL) right->print();
   }
 
-  for (const auto& poFeature: *poLayer) {
-    for (const auto& oField: *poFeature) {
-      switch (oField.GetType()) {
-        case OFTInteger:
-          printf("%d,", oField.GetInteger());
-          break;
-        case OFTInteger64:
-          printf(CPL_FRMT_GIB ",", oField.GetInteger64());
-          break;
-        case OFTReal:
-          printf("%.3f,", oField.GetDouble());
-          break;
-        case OFTString:
-          printf("%s,", oField.GetString());
-          break;
-        default:
-          printf("%s,", oField.GetAsString());
-          break;
+  void insert(ii seg) {
+    int c = (seg.first+seg.second)/2;
+    if (center == INF) {
+      center = c;
+    }
+    if (seg.second < center) {
+      if (left == NULL) left = new IntervalTree();
+      left->insert(seg);
+    } else if (center < seg.first) {
+      if (!right) right = new IntervalTree();
+      right->insert(seg);
+    } else {
+      start.push_back(seg);
+      end.push_back(ii(seg.second, seg.first));
+    }
+  }
+
+  vector<ii> intersect(int k) {
+    vector<ii> response;
+    if (k <= center) {
+      auto lst = lower_bound(start.begin(), start.end(), ii(k+1, -INF));
+      for (auto itr = start.begin(); itr != lst; ++itr) {
+        response.push_back(*itr);
+      }
+      if (left != NULL) {
+        auto aux = left->intersect(k);
+        response.insert(response.end(), aux.begin(), aux.end());
+      }
+    } else {
+      auto fst = lower_bound(end.begin(), end.end(), ii(k, -INF));
+      for (auto itr = fst; itr != end.end(); ++itr) {
+        response.push_back(*itr);
+      }
+      if (right != NULL) {
+        auto aux = right->intersect(k);
+        response.insert(response.end(), aux.begin(), aux.end());
       }
     }
-    const OGRGeometry *poGeometry = poFeature->GetGeometryRef();
-
-    if (poGeometry != nullptr
-            && wkbFlatten(poGeometry->getGeometryType()) == wkbPoint) {
-      const OGRPoint *poPoint = poGeometry->toPoint();
-      printf("%.3f,%3.f\n", poPoint->getX(), poPoint->getY());
-    } else {
-      printf("no point geometry\n");
-    }
-
-    // OGRwkbGeometryType type = wkbFlatten(poGeometry->getGeometryType());
-    // printf("type: %d\n", type);
-    // const OGRPolygon *poPolygon = poGeometry->toPolygon();
-    // if (poPolygon == NULL) {
-    //   printf("error\n");
-    // }
-
-    printf("%s\n", poGeometry->exportToJson());
+    return response;
   }
+};
+
+
+int main(int argc, const char **argv) {
+  vector<ii> segs = {
+    {5, 6},
+    {10, 18},
+    {8, 13},
+    {20, 29}
+  };
+  IntervalTree it;
+  for (ii seg: segs) {
+    it.insert(seg);
+  }
+  // ps(it.intersect(-1));
+  // ps(it.intersect(6));
+  // it.print();
+  ps(it.intersect(20));
+
   return 0;
 }

@@ -9,7 +9,6 @@
 #include <numeric>
 #include <queue>
 #include <random>
-#include <iterator>
 #include <set>
 #include <sstream>
 #include <stack>
@@ -17,8 +16,6 @@
 #include <string>
 #include <time.h>
 #include <vector>
-
-#include "ogrsf_frmts.h"
 
 #define INF 1E9
 #define INF64 2E18
@@ -63,7 +60,7 @@ template<class Arg, class... Args> void ps(const Arg& first, const Args&... rest
 }
 
 template<typename T> int remin(T& a,const T& b){if(b<a){a=b;return true;}return false;}
-template<typename T> int remax(T& a,const T& b){if(b>a){a=b;return true;}return false;}
+template<typename T> int remax(T& a,const T& b){if(a<b){a=b;return true;}return false;}
 
 typedef vector<int> vi;
 typedef long long ll;
@@ -72,63 +69,18 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
+set<string> words;
+
+
 int main(int argc, const char **argv) {
-  GDALAllRegister();
-
-  GDALDataset *poDS;
-
-  poDS = (GDALDataset*) GDALOpenEx("./map/map.shp", GDAL_OF_VECTOR, NULL, NULL, NULL);
-  if (poDS == NULL) {
-      printf("Open failed.\n");
-      exit(1);
-  }
-  printf("%d\n", poDS->GetLayerCount());
-
-  OGRLayer  *poLayer;
-  poLayer = poDS->GetLayer(0);
-  if (poLayer == NULL) {
-    printf("Layer is null\n");
-    exit(1);
-  }
-
-  for (const auto& poFeature: *poLayer) {
-    for (const auto& oField: *poFeature) {
-      switch (oField.GetType()) {
-        case OFTInteger:
-          printf("%d,", oField.GetInteger());
-          break;
-        case OFTInteger64:
-          printf(CPL_FRMT_GIB ",", oField.GetInteger64());
-          break;
-        case OFTReal:
-          printf("%.3f,", oField.GetDouble());
-          break;
-        case OFTString:
-          printf("%s,", oField.GetString());
-          break;
-        default:
-          printf("%s,", oField.GetAsString());
-          break;
-      }
+  string s;
+  while (cin >> s) {
+    if (s.size() == 5) {
+      words.insert(s);
     }
-    const OGRGeometry *poGeometry = poFeature->GetGeometryRef();
-
-    if (poGeometry != nullptr
-            && wkbFlatten(poGeometry->getGeometryType()) == wkbPoint) {
-      const OGRPoint *poPoint = poGeometry->toPoint();
-      printf("%.3f,%3.f\n", poPoint->getX(), poPoint->getY());
-    } else {
-      printf("no point geometry\n");
-    }
-
-    // OGRwkbGeometryType type = wkbFlatten(poGeometry->getGeometryType());
-    // printf("type: %d\n", type);
-    // const OGRPolygon *poPolygon = poGeometry->toPolygon();
-    // if (poPolygon == NULL) {
-    //   printf("error\n");
-    // }
-
-    printf("%s\n", poGeometry->exportToJson());
+  }
+  for (auto s: words) {
+    printf("%s\n", s.c_str());
   }
   return 0;
 }
