@@ -16,11 +16,16 @@
 #include <string>
 #include <time.h>
 #include <vector>
+// #include <netcdf>
+
 
 #define INF 1E9
 #define INF64 2E18
 
 using namespace std;
+
+// using namespace netCDF;
+// using namespace netCDF::exceptions;
 
 template<class T1, class T2> void pr(const pair<T1,T2>& x);
 template<class T, size_t SZ> void pr(const array<T,SZ>& x);
@@ -69,9 +74,30 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
+
+
+// class readnc {
+//   public:
+//     // declare field or class variable filename to
+//     // be used in constructor
+//     string filename;
+
+//     // declare constructor and deconstructor methods
+//     readnc(const char*);
+//     virtual ~readnc();
+
+//     // instance method(s)
+//     string getfilename();
+
+//     // class method(s)
+//     static float* readVariable(string, const char*);
+//     static void writeBinary(float*, const char*);
+// };
+
 int main(int argc, const char **argv) {
+  // NcFile dataFile("era5_Tmax_40.0_0.0_projection_2030.nc", NcFile::read);
 
-
+  printf("Hello World\n");
 
   return 0;
 }
