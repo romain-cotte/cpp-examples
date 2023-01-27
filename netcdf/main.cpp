@@ -16,7 +16,7 @@
 #include <string>
 #include <time.h>
 #include <vector>
-// #include <netcdf>
+#include <netcdf>
 
 
 #define INF 1E9
@@ -24,8 +24,8 @@
 
 using namespace std;
 
-// using namespace netCDF;
-// using namespace netCDF::exceptions;
+using namespace netCDF;
+using namespace netCDF::exceptions;
 
 template<class T1, class T2> void pr(const pair<T1,T2>& x);
 template<class T, size_t SZ> void pr(const array<T,SZ>& x);
@@ -95,7 +95,7 @@ typedef vector<ii> vii;
 // };
 
 int main(int argc, const char **argv) {
-  // NcFile dataFile("era5_Tmax_40.0_0.0_projection_2030.nc", NcFile::read);
+  NcFile dataFile("era5_Tmax_40.0_0.0_projection_2030.nc", NcFile::read);
 
   printf("Hello World\n");
 

@@ -1,5 +1,7 @@
 build
 
+external-Linux
+
 # My ignore files
 .DS_Store
 main.dSYM
