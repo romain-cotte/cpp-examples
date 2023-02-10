@@ -1,6 +1,7 @@
 build
 
 external-Linux
+external-Darwin
 
 # My ignore files
 .DS_Store

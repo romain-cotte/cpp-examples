@@ -15,7 +15,7 @@ if(NOT EXISTS ${DEP_ROOT_DIR})
   file(MAKE_DIRECTORY ${DEP_ROOT_DIR})
 endif()
 
-# include(cmake/netcdf.cmake)
+include(cmake/netcdf.cmake)
 find_package(CURL REQUIRED)
 
 
