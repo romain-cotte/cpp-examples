@@ -75,25 +75,6 @@ typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
 
-
-// class readnc {
-//   public:
-//     // declare field or class variable filename to
-//     // be used in constructor
-//     string filename;
-
-//     // declare constructor and deconstructor methods
-//     readnc(const char*);
-//     virtual ~readnc();
-
-//     // instance method(s)
-//     string getfilename();
-
-//     // class method(s)
-//     static float* readVariable(string, const char*);
-//     static void writeBinary(float*, const char*);
-// };
-
 int main(int argc, const char **argv) {
   NcFile dataFile("era5_Tmax_40.0_0.0_projection_2030.nc", NcFile::read);
 
