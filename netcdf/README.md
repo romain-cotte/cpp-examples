@@ -1,3 +1,8 @@
+See https://iq.opengenus.org/create-shared-library-in-cpp/
+for explanation or shared library
+
+/usr/bin/c++ -L/home/netcdf/external-Linux/install/lib/libnetcdf-cxx4.so CMakeFiles/netcdf_reader.dir/main.cpp.o -o netcdf_reader   -L/home/netcdf/external-Linux/netcdf-cxx4-4.3.1/build  -L/home/netcdf/external-Linux/install/lib -lnetcdf-cxx4
+
 # Installation
 
  * try to install from cmake instead of using Makefile

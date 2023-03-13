@@ -7,6 +7,9 @@ external-Darwin
 .DS_Store
 main.dSYM
 
+fenwick/ex2
+fenwick/ex2.dSYM/
+
 main
 consumer
 kafka_consumer
