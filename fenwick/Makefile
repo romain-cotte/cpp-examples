@@ -1,6 +1,6 @@
 
 CC=g++
-CFLAGS=-std=c++11 -Wall -g -posix
+CFLAGS=-std=c++17 -Wall -g
 
 all: main
 
@@ -11,5 +11,10 @@ compile:
 main: compile
 	./$@ | tee output.out
 
-.PHONY: all main
+
+ex2:
+	$(CC) $(CFLAGS) ex2.cpp -o ex2
+	./ex2
+
+.PHONY: all main ex2
 
