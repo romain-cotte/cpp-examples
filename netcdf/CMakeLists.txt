@@ -19,8 +19,6 @@ include(cmake/netcdf.cmake)
 find_package(CURL REQUIRED)
 
 include_directories(${DEP_ROOT_DIR}/${NETCDF_NAME}/cxx4)
-include_directories(${DEP_ROOT_DIR}/${NETCDF_NAME}/cxx4)
-
 
 link_directories(${DEP_ROOT_DIR}/install/lib/libnetcdf-cxx4.so)
 link_directories(${DEP_ROOT_DIR}/install/lib)
