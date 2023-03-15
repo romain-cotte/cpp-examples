@@ -1,5 +1,7 @@
 build
 
+venv
+
 external-Linux
 external-Darwin
 
