@@ -24,7 +24,12 @@ using namespace netCDF;
 using namespace netCDF::exceptions;
 
 void display_header_group(NcGroup nc_group) {
-cout << "dimensions:" << endl;
+
+  cout << "is null    : " << nc_group.isNull() << endl;
+  cout << "id         : " << nc_group.getId() << endl;
+  cout << "group count: " << nc_group.getGroupCount() << endl;
+
+  cout << "dimensions:" << endl;
   for (auto [name, nc_dim]: nc_group.getDims()) {
     cout << "   " << name << " = " << nc_dim.getSize() << " ;" << endl;
   }
@@ -71,8 +76,8 @@ cout << "dimensions:" << endl;
 
 
 int main(int argc, const char **argv) {
-  NcFile nc_file("./data/era5_Tmax_40.0_0.0_projection_2030.nc", NcFile::read);
-  // NcFile nc_file("./data/regions.nc", NcFile::read);
+  // NcFile nc_file("./data/era5_Tmax_40.0_0.0_projection_2030.nc", NcFile::read);
+  NcFile nc_file("./data/regions.nc", NcFile::read);
 
   string data_name = nc_file.getName(false);
   cout << data_name << endl;
@@ -83,11 +88,13 @@ int main(int argc, const char **argv) {
   cout << nc_file.isRootGroup() << endl;
   cout << nc_file.getVarCount() << endl;
 
+  display_header_group(nc_file);
+
   for (auto [name, nc_group]: nc_file.getGroups()) {
-    cout << "::" << name << endl;
+    cout << name << endl;
+    display_header_group(nc_group);
   }
 
-  display_header_group(nc_file);
 
   return 0;
 }

@@ -23,6 +23,6 @@ include_directories(${DEP_ROOT_DIR}/${NETCDF_NAME}/cxx4)
 link_directories(${DEP_ROOT_DIR}/install/lib/libnetcdf-cxx4.so)
 link_directories(${DEP_ROOT_DIR}/install/lib)
 
-add_executable(netcdf_reader main.cpp)
+add_executable(netcdf_reader src/main.cpp)
 
 target_link_libraries(netcdf_reader netcdf-cxx4)
