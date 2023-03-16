@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 3.16)
 
 project(NetcdfReader VERSION 1.0)
 
-
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(MACOSX TRUE)
+endif()
 
 set(ENV{CPATH} /usr/include/hdf5/serial/)
 
@@ -18,9 +21,20 @@ endif()
 include(cmake/netcdf.cmake)
 find_package(CURL REQUIRED)
 
+if (MACOSX)
+  execute_process(COMMAND nc-config --includedir OUTPUT_VARIABLE NETCDF_C_INCLUDE)
+  include_directories(${NETCDF_C_INCLUDE})
+endif()
+
+if (MACOSX)
+  link_directories(${DEP_ROOT_DIR}/install/lib/libnetcdf-cxx4.dylib)
+else()
+  link_directories(${DEP_ROOT_DIR}/install/lib/libnetcdf-cxx4.so)
+endif()
+
 include_directories(${DEP_ROOT_DIR}/${NETCDF_NAME}/cxx4)
 
-link_directories(${DEP_ROOT_DIR}/install/lib/libnetcdf-cxx4.so)
+
 link_directories(${DEP_ROOT_DIR}/install/lib)
 
 add_executable(netcdf_reader src/main.cpp)

@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstring>
 #include <functional>
+#include <iomanip>
 #include <iostream>
 #include <map>
 #include <numeric>
@@ -23,21 +24,21 @@ using namespace std;
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
-void display_header_group(NcGroup nc_group) {
-
-  cout << "is null    : " << nc_group.isNull() << endl;
-  cout << "id         : " << nc_group.getId() << endl;
-  cout << "group count: " << nc_group.getGroupCount() << endl;
-
-  cout << "dimensions:" << endl;
+void display_dimensions(const NcGroup &nc_group, int depth = 0) {
+  string prefix(2*depth, ' ');
+  cout << prefix << "  dimensions:" << endl;
   for (auto [name, nc_dim]: nc_group.getDims()) {
-    cout << "   " << name << " = " << nc_dim.getSize() << " ;" << endl;
+    cout << prefix  << "   " << name << " = " << nc_dim.getSize() << " ;" << endl;
   }
+}
 
-  cout << "variables:" << endl;
+void display_variables(const NcGroup &nc_group, int depth = 0) {
+  string prefix(2*depth, ' ');
+
+  cout << prefix << "  variables:" << endl;
   for (auto [name, nc_var]: nc_group.getVars()) {
     NcType nc_type = nc_var.getType();
-    cout << "  " << nc_type.getName() << " " << nc_var.getName() << "(";
+    cout << prefix << "   " << nc_type.getName() << " " << nc_var.getName() << "(";
     for (int i = 0; i < nc_var.getDimCount(); ++i) {
       if (i != 0) {
         cout << ", ";
@@ -49,7 +50,7 @@ void display_header_group(NcGroup nc_group) {
 
     for (auto [s, nc_var_att]: nc_var.getAtts()) {
       NcType nc_type = nc_var_att.getType();
-      cout << "    " << name << ":" << s << "(" << nc_type.getName() << ")";
+      cout << prefix << "    " << name << ":" << s << "(" << nc_type.getName() << ")";
 
       NcVarAtt att = nc_var.getAtt(s);
 
@@ -73,28 +74,38 @@ void display_header_group(NcGroup nc_group) {
   }
 }
 
+void display_header_group(NcGroup nc_group, int depth = 0) {
+  // cout << "name       : " << nc_group.getName(true) << endl;
+  // cout << "is null    : " << nc_group.isNull() << endl;
+  // cout << "id         : " << nc_group.getId() << endl;
+  // cout << "group count: " << nc_group.getGroupCount() << endl;
+  // cout << "getVarCount: " << nc_group.getVarCount() << endl;
+  string prefix(2*depth, ' ');
+
+  cout << prefix << "group: " << nc_group.getName(false) << " {" << endl;
+  if (nc_group.getVarCount()) {
+    display_dimensions(nc_group, depth);
+    display_variables(nc_group, depth);
+  }
+  if (nc_group.getGroupCount()) {
+    cout << endl;
+  }
+  for (auto [name, subgroup]: nc_group.getGroups()) {
+    display_header_group(subgroup, depth+1);
+  }
+  cout << prefix << "}" << endl;
+}
 
 
 int main(int argc, const char **argv) {
+  // std::cout << std::setw(10);
+  // std::cout << 77 << std::endl;
+
   // NcFile nc_file("./data/era5_Tmax_40.0_0.0_projection_2030.nc", NcFile::read);
   NcFile nc_file("./data/regions.nc", NcFile::read);
 
   string data_name = nc_file.getName(false);
-  cout << data_name << endl;
-
-
-  cout << nc_file.getName(true) << endl;
-  cout << nc_file.getId() << endl;
-  cout << nc_file.isRootGroup() << endl;
-  cout << nc_file.getVarCount() << endl;
-
   display_header_group(nc_file);
-
-  for (auto [name, nc_group]: nc_file.getGroups()) {
-    cout << name << endl;
-    display_header_group(nc_group);
-  }
-
 
   return 0;
 }
