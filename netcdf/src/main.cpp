@@ -24,12 +24,21 @@ using namespace std;
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
+vector<size_t> get_dimensions(const NcGroup &nc_group) {
+  vector<size_t> dim;
+  for (auto [name, nc_dim]: nc_group.getDims()) {
+    dim.push_back(nc_dim.getSize());
+  }
+  return dim;
+}
+
 void display_dimensions(const NcGroup &nc_group, int depth = 0) {
   string prefix(2*depth, ' ');
   cout << prefix << "  dimensions:" << endl;
   for (auto [name, nc_dim]: nc_group.getDims()) {
     cout << prefix  << "   " << name << " = " << nc_dim.getSize() << " ;" << endl;
   }
+  // return dim;
 }
 
 void display_variables(const NcGroup &nc_group, int depth = 0) {
@@ -47,6 +56,14 @@ void display_variables(const NcGroup &nc_group, int depth = 0) {
       cout << nc_dim.getName();
     }
     cout << ");" << endl;
+
+    // if (nc_type.getName() == "float") {
+    //   float arr[];
+    //   nc_var.getVar(arr);
+    //   for (int i = 0; i < 10; ++i) {
+    //     printf("%f\n", arr[i]);
+    //   }
+    // }
 
     for (auto [s, nc_var_att]: nc_var.getAtts()) {
       NcType nc_type = nc_var_att.getType();
@@ -98,15 +115,52 @@ void display_header_group(NcGroup nc_group, int depth = 0) {
 
 
 int main(int argc, const char **argv) {
-  // std::cout << std::setw(10);
-  // std::cout << 77 << std::endl;
 
-  // NcFile nc_file("./data/era5_Tmax_40.0_0.0_projection_2030.nc", NcFile::read);
-  NcFile nc_file("./data/regions.nc", NcFile::read);
+  // string data_name = nc_file.getName(false);
+  // display_header_group(nc_file);
 
-  string data_name = nc_file.getName(false);
-  display_header_group(nc_file);
 
+  clock_t t_clock = clock();
+
+  NcFile nc_file("./data/era5_Tmax_40.0_0.0_projection_2030.nc", NcFile::read);
+  // NcFile nc_file("./data/regions.nc", NcFile::read);
+
+  float *data_in = new float[10950*40*40];
+
+  // Retrieve the variable named "data"
+  auto data = nc_file.getVar("tasmax");
+  if (data.isNull()) {
+    printf("Error");
+    return 1;
+    // return nc_err;
+  }
+  data.getVar(data_in);
+
+  fprintf(
+    stderr,
+    "Time %.3f milliseconds.\n",
+    ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000
+  );
+
+  float mx = data_in[0];
+  float mn = data_in[0];
+  for (int i = 0; i < 10950*40*40; ++i) {
+    if (mx < data_in[i]) {
+      mx = data_in[i];
+    }
+    if (data_in[i] < mn) {
+      mn = data_in[i];
+    }
+    // printf("%f\n", data_in[i]);
+  }
+  printf("%f\n", mx);
+  printf("%f\n", mn);
+
+  fprintf(
+    stderr,
+    "Time %.3f milliseconds.\n",
+    ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000
+  );
   return 0;
 }
 

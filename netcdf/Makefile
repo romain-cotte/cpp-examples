@@ -1,7 +1,7 @@
 CC=g++
 WARNING_FLAGS=-Wall -Wno-deprecated-declarations -Wno-unused-result -Wfatal-errors
 SANITIZE_FLAGS=-fno-sanitize-recover
-CFLAGS=-std=c++17 -O2 $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix -I/usr/include/hdf5/serial -L/usr/lib/x86_64-linux-gnu/hdf5/serial
+CFLAGS=-std=c++17 -O3 $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix -I/usr/include/hdf5/serial -L/usr/lib/x86_64-linux-gnu/hdf5/serial
 # -I/home/romain/programs/cpp-lib/netcdf/netcdf-cxx4-4.3.1/build/cxx4
 
 LIBS=-lnetcdf -lhdf5_hl -lhdf5 -lpthread -lsz -lz -ldl -lm -lcurl
