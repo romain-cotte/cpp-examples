@@ -71,57 +71,63 @@ typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
 
-/**
- * Complexity: construction: O(n), query: O(log(n))
- *       [1;6]
- *      /     \
- * [1;3]      [4;6]
- *   |  \
- * [1;2] [2;3] ...
- *   |  \
- * [1;1] [2;2]
- *
- * Pointers are shrinking, we keep as long as intersection is not null
- * query(3, 5): [1;6] -> [1;3] & [4;6]
- */
-struct seg_tree {
+
+struct Seg_Tree {
+  // WARNING: * how shoud I set the value v? += or =?
+  //          * unite function +?
+  using T = ll;
+  function<T(T, T)> _unite_fun = [](T a, T b) {
+    return a + b;
+  };
+  inline static void assign(ll &a, ll b) { a = b; }
+  inline static void add(ll &a, ll b) { a += b; }
+  inline static void set(ll &a, ll b) {
+    return assign(a, b);
+    // return add(a, b);
+  };
+
   struct node {
     bool is_null = false;
-    int mn = 0;
-    int add = 0;
+    T val = 0;
+    T add = 0;
     int l = -1, r = -1;
-    node set(int _l, int _r, int v) {
+    node set(int _l, int _r, T v) {
       l = _l; r = _r;
-      mn = v;
+      Seg_Tree::set(val, v);
       return *this;
     }
-    void apply(int v) {
-      mn += v;
+    void apply(T v) {
+      Seg_Tree::set(val, v);
+    }
+    void apply(int l, int r, T v) {
+      apply((r-l+1)*v); // when summing all values
+      // apply(v);
     }
   };
   node unite(const node &a, const node &b) {
-    printf(
-      "unite [%d %d] and [%d %d]: %d and %d\n",
-      a.l, a.r, b.l, b.r, a.mn, b.mn
-    );
+    // printf(
+    //   "unite [%d %d] and [%d %d]: %lld and %lld\n",
+    //   a.l, a.r, b.l, b.r, a.val, b.val
+    // );
     node r;
     r.l = a.l; r.r = b.r;
-    r.mn = min(a.mn, b.mn);
+    r.val = _unite_fun(a.val, b.val);
     return r;
   }
-
   int n;
   vi a;
   vector<node> tree;
 
-  seg_tree(const vi &v): n(v.size()) {
+  Seg_Tree(int _n): n(_n) {
+    a.resize(n);
+    tree.resize(4 * n);
+  };
+  Seg_Tree(const vi &v): n(v.size()) {
     a = v;
-    tree.resize(2 * n - 1);
+    tree.resize(4 * n);
     build();
   }
-
   node build(int x, int l, int r) {
-    assert(x < 2*n);
     if (l == r) { return tree[x].set(l, r, a[l]); }
     int mid = (l + r) / 2;
     node r1 = build(2 * x + 1,     l, mid);
@@ -131,8 +137,14 @@ struct seg_tree {
 
   node build() { return build(0, 0, n-1); }
 
+  void print() {
+    for (int i = 0; i < n; ++i) {
+      cout << query(i, i) << " ";
+    }
+    cout << endl;
+  }
+
   node query(int x, int nl, int nr, int ql, int qr) {
-    assert(x < 2*n);
     push(x, nl, nr);
     if (ql <= nl && nr <= qr) return tree[x];
     if (qr < nl || nr < ql) return { true };
@@ -143,11 +155,13 @@ struct seg_tree {
     if (q2.is_null) return q1;
     return unite(q1, q2);
   }
-  node query(int start_idx, int end_idx) {
-    return query(0, 0, n-1, start_idx, end_idx);
+
+  ll query(int start_idx, int end_idx) {
+    assert(start_idx <= end_idx && start_idx < n && end_idx < n);
+    return query(0, 0, n-1, start_idx, end_idx).val;
   }
 
-  void update(int x, int nl, int nr, int idx, ll value) {
+  void update(int x, int nl, int nr, int idx, T value) {
     if (idx < nl || nr < idx) return;
     if (nl == nr) {
       a[idx] = value;
@@ -159,27 +173,30 @@ struct seg_tree {
     update(2 * x + 2, mid+1,  nr, idx, value);
     tree[x] = unite(tree[2*x+1], tree[2*x+2]);
   }
-  void update(int idx, ll value) { return update(0, 0, n-1, idx, value); }
+  void update(int idx, T value) {
+    assert(idx < n);
+    return update(0, 0, n-1, idx, value);
+  }
 
   void push(int x, int pl, int pr) {
     if (tree[x].add != 0) {
-      tree[x].apply(tree[x].add); // += (pr-pl+1) * lazy_tree[x];
+      tree[x].apply(pl, pr, tree[x].add);
       if (pl != pr) {
-        tree[2*x+1].add += tree[x].add; // += -> =
-        tree[2*x+2].add += tree[x].add; // += -> =
+        set(tree[2*x+1].add, tree[x].add);
+        set(tree[2*x+2].add, tree[x].add);
       }
       tree[x].add = 0;
     }
   }
 
-  void update_range(int x, int pl, int pr, int l, int r, ll value) {
+  void update_range(int x, int pl, int pr, int l, int r, T value) {
     push(x, pl, pr);
     if (r < pl || pr < l) return;
     if (l <= pl && pr <= r) {
-      tree[x].apply(value); // += (pr-pl+1)*value; // tree[x] = value;
+      tree[x].apply(pl, pr, value);
       if (pl != pr) {
-        tree[2*x+1].add += value; // lazy_tree[2*x+1] = value
-        tree[2*x+2].add += value; // lazy_tree[2*x+2] = value
+        set(tree[2*x+1].add, value);
+        set(tree[2*x+2].add, value);
       }
       return;
     }
@@ -191,6 +208,7 @@ struct seg_tree {
   }
 
   void update_range(int l, int r, ll value) {
+    assert(l < n && r < n);
     update_range(0, 0, n-1, l, r, value);
   }
 };
@@ -199,24 +217,50 @@ struct seg_tree {
 int main(int argc, const char **argv) {
 
   vi v = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-  seg_tree st(v);
-  ps("---");
-  ps(st.query(0, 0).mn);
-  ps(st.query(0, 1).mn);
-  ps(st.query(0, 2).mn);
-  ps(st.query(0, 3).mn);
-  ps(st.query(0, 4).mn);
-  ps(st.query(4, 8).mn);
+  Seg_Tree st(v);
+  auto check = [&v, &st](int i, int j) {
+    ll t = 0;
+    for (int k = i; k <= j; ++k) {
+      t += v[k];
+    }
+    if (t != st.query(i, j)) {
+      printf("Incorrect query %d %d = %lld instead of %lld\n",
+             i, j, st.query(i, j), t);
+      assert(0);
+    }
+  };
+  auto check_all = [&v, &st, &check]() {
+    int n = v.size();
+    for (int i = 0; i < n; ++i) {
+      for (int j = i; j < n; ++j) {
+        check(i, j);
+      }
+    }
+  };
 
-  st.update_range(0, 4, +100);
-  ps(st.query(0, 0).mn);
-  ps(st.query(1, 1).mn);
-  ps(st.query(2, 2).mn);
-  ps(st.query(3, 3).mn);
-  ps(st.query(4, 4).mn);
-  ps(st.query(5, 5).mn);
-  ps(st.query(6, 6).mn);
-  ps(st.query(0, 8).mn);
+  auto update = [&v, &st] (int i, ll value) {
+    v[i] = value;
+    st.update(i, value);
+  };
+
+  auto update_range = [&v, &st] (int l, int r, ll value) {
+    for (int i = l; i <= r; ++i) {
+      v[i] = value;
+    }
+    st.update_range(l, r, value);
+  };
+
+
+  st.print();
+  check_all();
+
+  update_range(0, 4, 10);
+  st.print();
+  check_all();
+
+  update(2, 100);
+  st.print();
+  check_all();
 
 
   return 0;
