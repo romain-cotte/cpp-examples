@@ -155,5 +155,9 @@ int main(int argc, const char **argv) {
   // assert_equals(lis_seq(seq), {4, 10, 13});
   printf("%d\n", lis({10, 7, 3, 9, 20, 12, 6, 8, 15}));
 
+
+  printf("%d\n", lis({3, 4, 6, 7, 17, 5, 10, 10}));
+
+
   return 0;
 }

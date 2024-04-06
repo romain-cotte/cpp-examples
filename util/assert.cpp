@@ -1,5 +1,6 @@
 #include "util/assert.hpp"
 #include "util/vector.hpp"
+#include <assert.h>
 
 void print_ok() {
   printf(" ... OK\n");
