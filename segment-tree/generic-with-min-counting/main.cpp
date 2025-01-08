@@ -124,7 +124,7 @@ struct Seg_Tree {
     //   Seg_Tree::set(val, v);
     // }
     void apply(int l, int r, T v) {
-      ps("apply", l, r, v);
+      // ps("apply", l, r, v);
       // apply((r-l+1)*v); // when summing all values
       Seg_Tree::set(val, (r-l+1)*v);
       Seg_Tree::set(mn, v);
@@ -160,6 +160,7 @@ struct Seg_Tree {
   Seg_Tree(int _n): n(_n) {
     a.resize(n);
     tree.resize(4 * n);
+    build();
   };
   Seg_Tree(const vector<ll> &v): n(v.size()) {
     a = v;
@@ -180,10 +181,6 @@ struct Seg_Tree {
     cout << "======" << endl;
     for (int i = 0; i < n; ++i) {
       cout << query(i, i) << " ";
-    }
-    cout << endl;
-    for (int i = 0; i < n; ++i) {
-      cout << a[i] << " ";
     }
     cout << endl;
   }
@@ -263,12 +260,20 @@ struct Seg_Tree {
 
 
 int main(int argc, const char **argv) {
-  vector<ll> v = {1, 2, 3, 4, 5, 6, 7, 8, 9};
-  Seg_Tree st(v);
+  Seg_Tree st(8);
+  vector<ll> v(8);
+
   auto check = [&v, &st](int i, int j) {
     ll t = 0; ll mn = INF64;
+    int mn_cnt = 0;
     for (int k = i; k <= j; ++k) {
-      t += v[k]; remin(mn, v[k]);
+      t += v[k];
+      if (v[k] < mn) {
+        mn = v[k];
+        mn_cnt = 1;
+      } else if (mn == v[k]) {
+        mn_cnt++;
+      }
     }
 
     Seg_Tree::node no = st.query_node(i, j);
@@ -285,6 +290,12 @@ int main(int argc, const char **argv) {
              i, j, no.mn, mn);
       ok = false;
     }
+    if (mn_cnt != no.mn_cnt) {
+      printf("Incorrect mn_cnt [%d %d] = %lld instead of %d\n",
+             i, j, no.mn_cnt, mn_cnt);
+      ok = false;
+    }
+
     return ok;
   };
 
@@ -312,16 +323,17 @@ int main(int argc, const char **argv) {
     st.update_range(l, r, value);
   };
 
-  st.print();
-  check_all();
-
-  update_range(0, 4, 10);
-  st.print();
-  check_all();
-
-  update(2, 100);
-  st.print();
-  check_all();
+  random_device rd;
+  mt19937 gen(rd());
+  uniform_int_distribution<>dist(0, 7);
+  for (int i = 0; i < 15; ++i) {
+    int l = dist(gen), r = dist(gen);
+    if (r < l) swap(l, r);
+    update_range(l, r, i%2?+1:-1);
+    st.print();
+    cout << "mn_cnt: " << st.query_node(0, 7).mn_cnt << endl;
+    check_all();
+  }
 
   cout << "Everything is OK" << endl;
 
