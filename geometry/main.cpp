@@ -1,3 +1,4 @@
+
 #include <algorithm>
 #include <assert.h>
 #include <bitset>
@@ -82,6 +83,9 @@ template<class Arg, class... Args> void ps(const Arg& first, const Args&... rest
 template<typename T> int remin(T& a,const T& b){if(b<a){a=b;return true;}return false;}
 template<typename T> int remax(T& a,const T& b){if(a<b){a=b;return true;}return false;}
 
+#define PI 3.141592653589793238462643383279502884L
+
+
 typedef vector<int> vi;
 typedef long long ll;
 typedef long double ld;
@@ -117,10 +121,9 @@ struct Point {
   }
 };
 ostream& operator<<(ostream& os, const Point& p) {
-  os << "x: " << p.x << " y: " << p.y;
+  os << "(" << p.x << ", " << p.y << ")";
   return os;
 }
-
 
 T dot(const Point &p, const Point &q) {
   return p.x*q.x + p.y*q.y;
@@ -142,17 +145,18 @@ bool inline belong(Line l, Point p) {
   return abs(l.a * p.x + l.b * p.y + l.c) <= 1E-6;
 }
 
-inline T square(T a) {
+inline T sq(T a) {
   return a * a;
 }
 
 inline T distance_squared(Point p, Point q) {
-  return square(p.x - q.x) + square(p.y - q.y);
+  return sq(p.x - q.x) + sq(p.y - q.y);
 }
 
 inline T distance(Point p, Point q) {
   return sqrt(distance_squared(p, q));
 }
+
 
 struct Circle {
   Point c;
@@ -164,9 +168,6 @@ struct Circle {
   }
 };
 
-// Point projection(Line l, Point p) {
-
-// }
 
 Line perpendicular(Line l, Point p) {
   Line ret{-l.b, l.a, l.b*p.x-l.a*p.y};
@@ -180,10 +181,37 @@ Point intersection(Line l1, Line l2) {
     y = -l1.c/l1.b;
     x = (l1.c*l2.b - l2.c*l1.b) / (l2.a * l1.b);
   } else {
-    y = (l1.c*l2.a-l1.a*l2.c)/(l2.b-l1.b*l2.a);
+    y = (l1.c*l2.a-l1.a*l2.c)/(l1.a*l2.b-l1.b*l2.a);
     x = (-l1.c -l1.b * y) / l1.a;
   }
   return Point(x, y);
+}
+
+Point projection(Line l, Point p) {
+  Line P = perpendicular(l, p);
+  return intersection(P, l);
+}
+
+inline T distance(Line l, Point p) {
+  T d = distance(projection(l, p), p);
+  T e = abs(l.a*p.x+l.b*p.y+l.c) / sqrt(sq(l.a)+sq(l.b));
+
+  assert(abs(d-e) < 1E-9);
+  return d;
+}
+
+
+T angle(Point A, Point B, Point C) {
+  // Al Kashi: sq(b) = sq(a) + sq(c) - 2*a*c*cos(ABC)
+  T a = distance(B, C);
+  T b = distance(A, C);
+  T c = distance(A, B);
+  return acos((sq(a)+sq(c)-sq(b))/(2*a*c));
+}
+
+
+T angle_degres(T rad) {
+  return 180*rad / PI;
 }
 
 
@@ -196,6 +224,10 @@ Point point_seg_coordinates(Point s, Point e, Point p) {
 
 T point_seg_distance(Point s, Point e, Point p) {
   return distance(point_seg_coordinates(s, e, p), p);
+}
+
+Line bisector(Line l, Line m) {
+
 }
 
 
@@ -216,11 +248,25 @@ int main(int argc, const char **argv) {
   Point K;
 
   Line AC = Line(A, C);
+  Line BC = Line(B, C);
+  Line AB = Line(A, B);
+
   Line BH = perpendicular(AC, B);
   Point h = intersection(AC, BH);
 
-
   cout << h << endl;
+
+  cout << "Projection of B on AC: " << projection(AC, B) << endl;
+  cout << "Projection of A on BC: " << projection(BC, A) << endl;
+  cout << "Projection of C on AB: " << projection(AB, C) << endl;
+
+
+  cout << angle_degres(angle(A, B, C)) << endl;
+
+  cout << distance(AC, B) << endl;
+  cout << distance(AB, C) << endl;
+  cout << distance(BC, A) << endl;
+
 
   return 0;
 }

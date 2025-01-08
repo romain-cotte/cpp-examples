@@ -5,17 +5,18 @@ CFLAGS=-std=c++20 -D DEBUG_LOCAL=true -D COLOR=true -O2 $(WARNING_FLAGS) $(SANIT
 LIBS=-lm -lcrypt
 # ifdef DEBUG -> -D DEBUG
 
-
 BIN=main
+
+all: compile_main
 
 compile_main:
 	$(CC) $(CFLAGS) -o $(BIN) main.cpp $(LIBS)
 
 debug:
-	g++ -std=c++17 -Wshadow -Wall -g -fuse-ld=gold -fsanitize=address -fsanitize=undefined -D_GLIBCXX_DEBUG main.cpp -o main -ljsoncpp
+	g++ -std=c++17 -O2 $(WARNING_FLAGS) $(DEBUG_FLAGS) main.cpp -o main
 
 main: compile_main
-	./main < main.in | tee main.out
+	./main | tee main.out
 
 clean:
 	rm -rf *.o main
