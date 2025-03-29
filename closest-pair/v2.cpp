@@ -5,7 +5,6 @@
  * Problem: https://www.spoj.com/problems/CLOPPAIR/
  *
  */
-
 #include <algorithm>
 #include <assert.h>
 #include <bitset>
