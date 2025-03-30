@@ -97,6 +97,8 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
+default_random_engine generator;
+normal_distribution<double> norm_dist(0.0, 1.0);
 
 
 uint32_t read_uint32(ifstream &file) {
@@ -104,14 +106,6 @@ uint32_t read_uint32(ifstream &file) {
   file.read(reinterpret_cast<char*>(bytes), 4);
   return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
 }
-
-struct Neuron {
-  int id;
-  long double activation = 0;
-  long double threshold = 0;
-  Neuron(int _id = 42) : id(_id) {}
-  ~Neuron() { printf("Delete\n"); }
-};
 
 struct Images {
   uint32_t n, height, width;
@@ -147,24 +141,78 @@ Images *read_idx3_ubyte(string filename) {
 }
 
 
+// struct Neuron {
+//   int id;
+//   long double activation = 0;
+//   long double threshold = 0;
+//   Neuron(int _id = 42) : id(_id) {}
+//   ~Neuron() { printf("Delete\n"); }
+// };
+
+
+template<class T>
+vector<T> sigmoid(vector<T> a) {
+  int n = a.size();
+  vector<T> r(n);
+  for (int i = 0; i < n; ++i) {
+    r[i] = 1 / (1 + exp(-a[i]));
+  }
+  return r;
+}
+
+
+
+
+template<class T = float>
+struct Network {
+  vector<vector<T>> biases;
+  vector<vector<vector<T>>> weights;
+  Network(vi layer_sizes) {
+    for (int i = 1; i < (int)layer_sizes.size(); ++i) {
+      size_t sz = layer_sizes[i];
+      size_t szp = layer_sizes[i-1];
+      vector<T> v(sz);
+      generate(v.begin(), v.end(), [&]() {
+        return norm_dist(generator);
+      });
+      biases.push_back(v);
+      vector<vector<T>> wi(sz, vector<T>(szp));
+      for (size_t j = 0; j < sz; ++j) {
+        for (size_t k = 0; k < szp; ++k) {
+          wi[j][k] = norm_dist(generator);
+        }
+      }
+      weights.push_back(wi);
+    }
+    ps(biases);
+    ps(weights);
+  };
+};
+
+
 
 int main(int argc, const char **argv) {
 #ifndef DEBUG_LOCAL
   ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
 #endif
 
-  const std::string filename = "t10k-images.idx3-ubyte";
+  const std::string filename = "data/train-images.idx3-ubyte";
+  // const std::string filename = "data/t10k-images.idx3-ubyte";
   Images *images = read_idx3_ubyte(filename);
 
   for (uint32_t y = 0; y < images->height; ++y) {
     for (uint32_t x = 0; x < images->width; ++x) {
-        // cout << (image_data[0][y * img_width + x] > 128 ? '#' : '.') << " ";
-        cout << (int)images->data[0][y * images->width + x] << " ";
+        cout << (images->data[1][y * images->width + x] > 128 ? '#' : '.');
+        // cout << (int)images->data[0][y * images->width + x] << " ";
     }
     cout << endl;
   }
+  vector<ld> v = {1};
+  ps(sigmoid(v));
+
+  vector<int> layer_sizes = {2, 3, 1};
+
+  Network network(layer_sizes);
 
   return 0;
 }
-
-
