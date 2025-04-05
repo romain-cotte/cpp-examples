@@ -175,9 +175,9 @@ void solve() {
     // Explanation from the master theorem:
     // T(n) = 2 * T(n/2) + O(n log n) instead of T(n) = 2 T(n/2) + O(n)
     // we are in the case 2 of the wikipedia page so the complexity is
-    // f(n) = Θ(n^crit * (log n)^k) for k = 1 and crit = 1 then
-    // T(n) = Θ(n^crit * (log n)^(k+1)) = Θ(n * (log n)^2)
-    // instead of Θ(n * (log n))
+    // f(n) = Î�(n^crit * (log n)^k) for k = 1 and crit = 1 then
+    // T(n) = Î�(n^crit * (log n)^(k+1)) = Î�(n * (log n)^2)
+    // instead of Î�(n * (log n))
     // sort(B.begin(), B.end(), [&](int i, int j) {
     //   return v[i][1] < v[j][1];
     // });
@@ -200,15 +200,27 @@ void solve() {
      * at the end of the lambda, vector B needs to be sorted by
      * y
      */
-    inplace_merge(
-      B.begin()+l,
-      B.begin()+m+1,
-      B.begin()+r+1,
-      [&v](int i, int j) { return v[i][1] < v[j][1]; }
-    );
+
+    {
+      vector<int> tB;
+      merge(
+        B.begin()+l,
+        B.begin()+m+1,
+        B.begin()+m+1,
+        B.begin()+r+1,
+        back_inserter(tB),
+        [&v](int i, int j) {
+          return v[i][1] < v[j][1];
+        }
+      );
+
+      for (int i = l; i <= r; ++i) {
+        B[i] = tB[i-l];
+      }
+    }
 
     // we only keep the point at a maximum distance of h from
-    // point m, all other points are not relevant
+    // point m, all other ponts are not relevant
     vector<int> b;
     for (int i = l; i <= r; ++i) {
       if (abs(v[B[i]][0] - v[m][0]) <= h) b.push_back(B[i]);
