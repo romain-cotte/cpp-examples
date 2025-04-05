@@ -1,7 +1,7 @@
 CC=g++
 WARNING_FLAGS=-Wall -Wno-deprecated-declarations -Wno-unused-result -Wfatal-errors
 SANITIZE_FLAGS=-fno-sanitize-recover
-CFLAGS=-std=c++20 -O2 -D DEBUG_LOCAL=true -D COLOR=true $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix
+CFLAGS=-std=c++20 -O0 -D DEBUG_LOCAL=true -D COLOR=true $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix
 LIBS=-lm -lcrypt
 # ifdef DEBUG -> -D DEBUG
 

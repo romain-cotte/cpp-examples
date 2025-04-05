@@ -99,9 +99,8 @@ typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
 default_random_engine generator;
-normal_distribution<double> norm_dist(0.0, 1.0);
 mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
-
+normal_distribution<double> norm_dist(0.0, 1.0);
 
 
 uint32_t read_uint32(ifstream &file) {
@@ -218,7 +217,7 @@ vector<T> dot(const vector<vector<T>>& m, const vector<T>& a) {
 
 
 template<class T>
-vector<T> sigmoid(vector<T> a) {
+vector<T> sigmoid(const vector<T> &a) {
   int n = a.size();
   vector<T> r(n);
   for (int i = 0; i < n; ++i) {
@@ -226,6 +225,19 @@ vector<T> sigmoid(vector<T> a) {
   }
   return r;
 }
+
+template<class T>
+vector<T> sigmoid_prime(const vector<T> &a) {
+  // sigmoid(a) * (1 - sigmoid(a));
+  int n = a.size();
+  vector<T> r(n);
+  for (int i = 0; i < n; ++i) {
+    T e = exp(-a[i]);
+    r[i] = e/((1+e)*(1+e));
+  }
+  return r;
+}
+
 
 template<class T = float>
 struct Network {
@@ -242,13 +254,13 @@ struct Network {
       size_t szp = layer_sizes[i-1];
       vector<T> v(sz);
       generate(v.begin(), v.end(), [&]() {
-        return norm_dist(generator);
+        return norm_dist(rng);
       });
       biases.push_back(v);
       vector<vector<T>> wi(sz, vector<T>(szp));
       for (size_t j = 0; j < sz; ++j) {
         for (size_t k = 0; k < szp; ++k) {
-          wi[j][k] = norm_dist(generator);
+          wi[j][k] = norm_dist(rng);
         }
       }
       weights.push_back(wi);
@@ -261,7 +273,7 @@ struct Network {
     // a' = σ(w.a+b)
     for (int i = 0; i < m; ++i) {
       // ps("::", biases[i], weights[i]);
-      a = dot(weights[i], a) + biases[i];
+      a = sigmoid(dot(weights[i], a) + biases[i]);
     }
     return a;
   }
@@ -315,10 +327,10 @@ struct Network {
   }
 
   void update_mini_batch(Data *data, const vi &ind, float eta) {
-    vector<vector<T>> new_biases(biases.size(), vector<T>(biases[0]));
+    vector<vector<T>> new_biases(biases.size(), vector<T>(biases[0].size()));
     vector<vector<vector<T>>> new_weights(
       weights.size(),
-      vector<vector<T>>(weights[0], vector<T>(weights[0][0]))
+      vector<vector<T>>(weights[0].size(), vector<T>(weights[0][0].size()))
     );
     for (int i = 0; i < (int)ind.size(); ++i) {
       // vector<uint8_t> data->images[i] => (uint8_t) data->labels[i]
@@ -326,11 +338,20 @@ struct Network {
     }
   }
 
-  void backprop(int i) {
+  void backprop(Data *data, int i) {
+    // data->images[i] should have label data->labels[i]
+
+    vector<vector<T>> nabla_b(biases.size(), vector<T>(biases[0].size()));
+
+    ps("sizes", weights.size(), weights[0].size(), weights[0][0].size());
+
+    vector<vector<vector<T>>> nabla_w(
+      weights.size(),
+      vector<vector<T>>(weights[0].size(), vector<T>(weights[0][0].size()))
+    );
+    ps(nabla_b, nabla_w);
 
   }
-
-
 
 };
 
@@ -340,6 +361,11 @@ int main(int argc, const char **argv) {
 #ifndef DEBUG_LOCAL
   ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
 #endif
+
+  clock_t t_clock = clock();
+
+
+
   const string train_name = "train";
   Data *training_data = read_idx3_ubyte(train_name);
   const string t10k_name = "t10k";
@@ -350,8 +376,11 @@ int main(int argc, const char **argv) {
     training_data->print(i);
   }
 
-  vector<ld> v = {1};
-  ps(sigmoid(v));
+  // {
+  //   vector<ld> v = {1, 2, 4, 5, 10};
+  //   ps(sigmoid(v));
+  //   ps(sigmoid_prime(v));
+  // }
 
   {
     vector<int> layer_sizes = {2, 3, 10};
@@ -367,6 +396,12 @@ int main(int argc, const char **argv) {
   Network network(layer_sizes);
   network.evaluate(validation_data);
 
+  network.backprop(training_data, 0);
 
+  fprintf(
+    stderr,
+    "Time %.3f milliseconds.\n",
+    ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000
+  );
   return 0;
 }
