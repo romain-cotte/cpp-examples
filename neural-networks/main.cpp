@@ -189,12 +189,36 @@ vector<T> operator+(const vector<T>& a, const vector<T>& b) {
 }
 
 template<class T>
-T dot(const vector<T>& a, const vector<T>& b) {
+vector<T> operator*(const vector<T>& a, const vector<T>& b) {
+  size_t n = a.size();
+  assert(n == b.size());
+  vector<T> r(n);
+  for (size_t i = 0; i < n; ++i) {
+    r[i] = a[i] * b[i];
+  }
+  return r;
+}
+
+
+template<class T>
+T dot_scalar(const vector<T>& a, const vector<T>& b) {
+  // see if we remove or keep the *
   size_t n = a.size();
   assert(n == b.size());
   T r = 0;
   for (size_t i = 0; i < n; ++i) {
     r += a[i] * b[i];
+  }
+  return r;
+}
+
+template<class T = float>
+vector<T> dot(const vector<T>& a, const vector<T>& b) {
+  size_t n = a.size();
+  assert(n == b.size());
+  vector<T> r(n);
+  for (size_t i = 0; i < n; ++i) {
+    r[i] += a[i] * b[i];
   }
   return r;
 }
@@ -207,7 +231,7 @@ vector<T> dot(const vector<vector<T>>& m, const vector<T>& a) {
   assert(nc == (int)a.size());
   vector<T> r(nl);
   for (int l = 0; l < nl; ++l) {
-    r[l] = dot(m[l], a);
+    r[l] = dot_scalar(m[l], a);
     // for (int c = 0; c < nc; ++c) {
     //   r[l] += m[l][c] * a[c];
     // }
@@ -216,12 +240,54 @@ vector<T> dot(const vector<vector<T>>& m, const vector<T>& a) {
 }
 
 
+template<class T = float>
+vector<vector<T>> dot_nm(const vector<T>& a, const vector<T>& b) {
+  int na = a.size(); int nb = b.size();
+
+  vector<vector<T>> r(na, vector<T>(nb));
+  for (int i = 0; i < na; ++i) {
+    for (int j = 0; j < nb; ++j) {
+      r[i][j] = a[i] * b[j];
+    }
+  }
+  return r;
+}
+
+
+template<class T = float>
+vector<vector<T>> transpose(const vector<vector<T>>& mat) {
+  int n = mat.size(); int m = mat[0].size();
+  vector<vector<T>> r(m, vector<T>(n));
+  for (int i = 0; i < m; ++i) {
+    for (int j = 0; j < n; ++j) {
+      r[i][j] = mat[j][i];
+    }
+  }
+  return r;
+}
+
+
+template<class T>
+T sigmoid(T x) {
+  // check if it's useful or not
+  // if (a[i] < -200.0f) {
+  //   r[i] = 0;
+  // } else if (a[i] > 200.0f) {
+  //   r[i] = 1;
+  // } else {
+  //   r[i] = 1 / (1 + exp(-a[i]));
+  // }
+  return 1 / (1 + exp(-x));
+}
+
+
+
 template<class T>
 vector<T> sigmoid(const vector<T> &a) {
   int n = a.size();
   vector<T> r(n);
   for (int i = 0; i < n; ++i) {
-    r[i] = 1 / (1 + exp(-a[i]));
+    r[i] = sigmoid(a[i]);
   }
   return r;
 }
@@ -232,8 +298,7 @@ vector<T> sigmoid_prime(const vector<T> &a) {
   int n = a.size();
   vector<T> r(n);
   for (int i = 0; i < n; ++i) {
-    T e = exp(-a[i]);
-    r[i] = e/((1+e)*(1+e));
+    r[i] = sigmoid(a[i]) * (1 - sigmoid(a[i]));
   }
   return r;
 }
@@ -241,14 +306,14 @@ vector<T> sigmoid_prime(const vector<T> &a) {
 
 template<class T = float>
 struct Network {
-  int m;
+  int L;
   vector<vector<T>> biases;
   vector<vector<vector<T>>> weights;
   vector<int> layer_sizes;
 
   Network(vi _layer_sizes) {
     layer_sizes = _layer_sizes;
-    m = layer_sizes.size() - 1;
+    L = layer_sizes.size() - 1;
     for (int i = 1; i < (int)layer_sizes.size(); ++i) {
       size_t sz = layer_sizes[i];
       size_t szp = layer_sizes[i-1];
@@ -265,13 +330,13 @@ struct Network {
       }
       weights.push_back(wi);
     }
-    // ps(biases);
-    // ps(weights);
+    ps("biases", biases);
+    // ps("weights", weights);
   }
 
   vector<T> feed_forward(vector<T> a) {
     // a' = σ(w.a+b)
-    for (int i = 0; i < m; ++i) {
+    for (int i = 0; i < L; ++i) {
       // ps("::", biases[i], weights[i]);
       a = sigmoid(dot(weights[i], a) + biases[i]);
     }
@@ -287,10 +352,15 @@ struct Network {
     */
     int n = data->n;
     for (int ep = 0; ep < epochs; ++ep) {
+      cout << "ep" << ep << endl;
+
       vi ind(n); iota(ind.begin(), ind.end(), 0);
       shuffle(ind.begin(), ind.end(), rng);
 
       for (int i = 0; i < n; i += mini_batch_size) {
+        // if (i % 1000 == 0) {
+        //   cout << "mini_batch seq " <<  i << endl;
+        // }
         vi cur = {};
         for (int k = 0; k < mini_batch_size; ++k) {
           cur.push_back(ind[i+k]);
@@ -327,33 +397,208 @@ struct Network {
   }
 
   void update_mini_batch(Data *data, const vi &ind, float eta) {
-    vector<vector<T>> new_biases(biases.size(), vector<T>(biases[0].size()));
-    vector<vector<vector<T>>> new_weights(
-      weights.size(),
-      vector<vector<T>>(weights[0].size(), vector<T>(weights[0][0].size()))
-    );
+    vector<vector<T>> nabla_b(biases.size(), vector<T>(biases[0].size()));
+
+    vector<vector<vector<T>>> nabla_w(weights.size());
+    for (int i = 0; i < L; ++i) {
+      nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
+    }
+
     for (int i = 0; i < (int)ind.size(); ++i) {
       // vector<uint8_t> data->images[i] => (uint8_t) data->labels[i]
+      auto [delta_nabla_b, delta_nabla_w] = backprop(data, ind[i]);
 
+      // nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
+      // nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+
+      for (int l = 0; l < L; ++l) {
+        for (int j = 0; j < (int)nabla_b[l].size(); ++j) {
+          nabla_b[l][j] = nabla_b[l][j] + delta_nabla_b[l][j];
+        }
+        assert(nabla_w[l].size() == weights[l].size());
+        assert(nabla_w[l].size() == delta_nabla_w[l].size());
+
+        for (int j = 0; j < (int)nabla_w[l].size(); ++j) {
+          // ps(l, j, nabla_w[l][j].size(), delta_nabla_w[l][j].size());
+          assert(nabla_w[l][j].size() == weights[l][j].size());
+          assert(nabla_w[l][j].size() == delta_nabla_w[l][j].size());
+          for (int k = 0; k < (int)nabla_w[l][j].size(); ++k) {
+            nabla_w[l][j][k] += delta_nabla_w[l][j][k];
+          }
+        }
+      }
+    }
+
+
+    // self.weights = [w-(eta/len(mini_batch))*nw
+    //                 for w, nw in zip(self.weights, nabla_w)]
+    // self.biases = [b-(eta/len(mini_batch))*nb
+    //                for b, nb in zip(self.biases, nabla_b)]
+
+    for (int l = 0; l < L; ++l) {
+      for (int i = 0; i < (int)biases[l].size(); ++i) {
+        // nabla_b[l][j] = nabla_b[l][j] + delta_nabla_b[l][j];
+        biases[l][i] -= eta * nabla_b[l][i] / ind.size();
+      }
+
+      for (int i = 0; i < (int)weights[l].size(); ++i) {
+        for (int j = 0; j < (int)weights[l][i].size(); ++j) {
+          weights[l][i][j] -= eta * nabla_w[l][i][j] / ind.size();
+        }
+      }
     }
   }
 
-  void backprop(Data *data, int i) {
-    // data->images[i] should have label data->labels[i]
+
+  pair<vector<vector<T>>, vector<vector<vector<T>>>> backprop(Data *data, int k) {
+    // data->images[k] should have label data->labels[k]
 
     vector<vector<T>> nabla_b(biases.size(), vector<T>(biases[0].size()));
+    // ps("sizes", weights.size(), weights[0].size(), weights[0][0].size());
 
-    ps("sizes", weights.size(), weights[0].size(), weights[0][0].size());
+    vector<vector<vector<T>>> nabla_w(weights.size());
+    for (int i = 0; i < L; ++i) {
+      nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
+    }
 
-    vector<vector<vector<T>>> nabla_w(
-      weights.size(),
-      vector<vector<T>>(weights[0].size(), vector<T>(weights[0][0].size()))
+    for (int l = 0; l < L; ++l) {
+      assert(nabla_w[l].size() == weights[l].size());
+      for (int j = 0; j < (int)nabla_w[l].size(); ++j) {
+        assert(nabla_w[l][j].size() == weights[l][j].size());
+      }
+    }
+
+
+    // ps(nabla_b, nabla_w);
+
+    int n = data->images[k].size();
+    vector<float> activation(n);
+    for (int i = 0; i < n; ++i) {
+      activation[i] = data->images[k][i];
+    }
+
+    vector<vector<float>> activations = {activation};
+    vector<vector<float>> zs;
+
+    for (int i = 0; i < L; ++i) {
+      vector z = dot(weights[i], activation) + biases[i];
+      zs.push_back(z);
+      activation = sigmoid(z);
+      activations.push_back(activation);
+    }
+
+    vector<float> delta = dot(
+      cost_derivative(activations.back(), data->labels[k]),
+      sigmoid_prime(zs.back())
     );
-    ps(nabla_b, nabla_w);
 
+    nabla_b.back() = delta;
+    nabla_w.back() = dot_nm(delta, activations[L-1]);
+
+    // for (int i = 0; i < (int)delta.size(); ++i) {
+    //   for (int j = 0; j < (int)activations[L-1].size(); ++j) {
+    //     nabla_w[L-1][i][j] = delta[i] * activations[L-1][j];
+    //   }
+    // }
+
+
+    for (int l = 0; l < L; ++l) {
+      assert(nabla_w[l].size() == weights[l].size());
+      for (int j = 0; j < (int)nabla_w[l].size(); ++j) {
+        assert(nabla_w[l][j].size() == weights[l][j].size());
+      }
+    }
+
+
+
+    // ps(nabla_b, nabla_w);
+
+    // !!! num_layers = L+1
+
+    for (int l = L-2; l >= 0; --l) {
+      vector<float> z = zs[l];
+      vector<float> sp = sigmoid_prime(z);
+      vector<float> delta_r(weights[l+1][0].size());
+      for (int i = 0; i < (int)weights[l+1].size(); ++i) {
+        for (int j = 0; j < (int)weights[l+1][i].size(); ++j) {
+          delta_r[j] += weights[l+1][i][j] * delta[i];
+        }
+      }
+      // delta_r      size 3, 10
+      // weights[l+1] size 10, 3
+      // delta        size 10
+      // sp           size 3
+
+      delta = dot(delta_r, sp);
+      nabla_b[l] = delta;
+
+      // ps(delta, activations[l]);
+      // nabla_w[l] = dot(delta, activations[l]);
+      for (int i = 0; i < (int)delta.size(); ++i) {
+        for (int j = 0; j < (int)activations[l].size(); ++j) {
+          nabla_w[l][i][j] = delta[i] * activations[l][j];
+        }
+      }
+    }
+
+    for (int l = 0; l < L; ++l) {
+      assert(nabla_w[l].size() == weights[l].size());
+      for (int j = 0; j < (int)nabla_w[l].size(); ++j) {
+        assert(nabla_w[l][j].size() == weights[l][j].size());
+      }
+    }
+
+
+    // ps(nabla_b, nabla_w);
+    return make_pair(nabla_b, nabla_w);
+  }
+
+  vector<float> cost_derivative(vector<float> output_activations, int expected) {
+    int n = output_activations.size();
+    vector<float> r(n);
+    for (int i = 0; i < n; ++i) {
+      r[i] = output_activations[i] + (i == expected ? -1: 0);
+    }
+    return r;
   }
 
 };
+
+
+
+int test(Data *training_data) {
+
+  for (int i = 90; i < 100; ++i) {
+    training_data->print(i);
+  }
+
+  {
+    vector<vector<ld>> v = {
+      {1, 2, 4},
+      {7, 8, 9}
+    };
+    ps("v", v);
+    ps("transpose(v)", transpose(v));
+  }
+
+
+  {
+    vector<ld> v = {1, 2, 4, 5, 10};
+    ps(sigmoid(v));
+    ps(sigmoid_prime(v));
+  }
+
+  {
+    vector<int> layer_sizes = {2, 3, 10};
+    Network network(layer_sizes);
+    vector<float> a = {1.0, 2.0};
+    vector<float> b = {3.0, 4.0};
+    ps("a+b", a+b);
+    ps("dot a, b", dot_scalar(a, b));
+    ps(network.feed_forward(a));
+  }
+  return 0;
+}
 
 
 
@@ -363,7 +608,7 @@ int main(int argc, const char **argv) {
 #endif
 
   clock_t t_clock = clock();
-
+  // ps(sigmoid_prime(vector<float>{-321.005, 1446.8, -544.198}));
 
 
   const string train_name = "train";
@@ -371,32 +616,13 @@ int main(int argc, const char **argv) {
   const string t10k_name = "t10k";
   Data *validation_data = read_idx3_ubyte(t10k_name);
 
-
-  for (int i = 90; i < 100; ++i) {
-    training_data->print(i);
-  }
-
-  // {
-  //   vector<ld> v = {1, 2, 4, 5, 10};
-  //   ps(sigmoid(v));
-  //   ps(sigmoid_prime(v));
-  // }
-
-  {
-    vector<int> layer_sizes = {2, 3, 10};
-    Network network(layer_sizes);
-    vector<float> a = {1.0, 2.0};
-    vector<float> b = {3.0, 4.0};
-    ps("a+b", a+b);
-    ps("dot a, b", dot(a, b));
-    ps(network.feed_forward(a));
-  }
-
   vector<int> layer_sizes = {784, 3, 10};
-  Network network(layer_sizes);
-  network.evaluate(validation_data);
 
-  network.backprop(training_data, 0);
+  Network network(layer_sizes);
+  network.SGD(training_data, 10, 10, 3.0, validation_data);
+
+  // network.evaluate(validation_data);
+  // network.backprop(training_data, 0);
 
   fprintf(
     stderr,
