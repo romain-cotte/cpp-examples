@@ -304,7 +304,7 @@ vector<T> sigmoid_prime(const vector<T> &a) {
 }
 
 
-template<class T = float>
+template<class T>
 struct Network {
   int L;
   vector<vector<T>> biases;
@@ -377,12 +377,12 @@ struct Network {
   int evaluate(Data *data) {
     int cnt = 0;
     for (int i = 0; i < (int)data->n; ++i) {
-      vector<float> input;
+      vector<T> input;
       for (uint8_t x: data->images[i]) {
         input.push_back(x);
       }
       auto a = feed_forward(input);
-      float mx = -1E9;
+      T mx = -1E9;
       int evaluation = -1;
       for (int i = 0; i < (int)a.size(); ++i) {
         if (a[i] > mx) {
@@ -429,7 +429,6 @@ struct Network {
       }
     }
 
-
     // self.weights = [w-(eta/len(mini_batch))*nw
     //                 for w, nw in zip(self.weights, nabla_w)]
     // self.biases = [b-(eta/len(mini_batch))*nb
@@ -449,7 +448,6 @@ struct Network {
     }
   }
 
-
   pair<vector<vector<T>>, vector<vector<vector<T>>>> backprop(Data *data, int k) {
     // data->images[k] should have label data->labels[k]
 
@@ -460,25 +458,22 @@ struct Network {
     for (int i = 0; i < L; ++i) {
       nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
     }
-
     for (int l = 0; l < L; ++l) {
       assert(nabla_w[l].size() == weights[l].size());
       for (int j = 0; j < (int)nabla_w[l].size(); ++j) {
         assert(nabla_w[l][j].size() == weights[l][j].size());
       }
     }
-
-
     // ps(nabla_b, nabla_w);
 
     int n = data->images[k].size();
-    vector<float> activation(n);
+    vector<T> activation(n);
     for (int i = 0; i < n; ++i) {
       activation[i] = data->images[k][i];
     }
 
-    vector<vector<float>> activations = {activation};
-    vector<vector<float>> zs;
+    vector<vector<T>> activations = {activation};
+    vector<vector<T>> zs;
 
     for (int i = 0; i < L; ++i) {
       vector z = dot(weights[i], activation) + biases[i];
@@ -487,7 +482,7 @@ struct Network {
       activations.push_back(activation);
     }
 
-    vector<float> delta = dot(
+    vector<T> delta = dot(
       cost_derivative(activations.back(), data->labels[k]),
       sigmoid_prime(zs.back())
     );
@@ -509,16 +504,14 @@ struct Network {
       }
     }
 
-
-
     // ps(nabla_b, nabla_w);
 
     // !!! num_layers = L+1
 
     for (int l = L-2; l >= 0; --l) {
-      vector<float> z = zs[l];
-      vector<float> sp = sigmoid_prime(z);
-      vector<float> delta_r(weights[l+1][0].size());
+      vector<T> z = zs[l];
+      vector<T> sp = sigmoid_prime(z);
+      vector<T> delta_r(weights[l+1][0].size());
       for (int i = 0; i < (int)weights[l+1].size(); ++i) {
         for (int j = 0; j < (int)weights[l+1][i].size(); ++j) {
           delta_r[j] += weights[l+1][i][j] * delta[i];
@@ -553,9 +546,9 @@ struct Network {
     return make_pair(nabla_b, nabla_w);
   }
 
-  vector<float> cost_derivative(vector<float> output_activations, int expected) {
+  vector<T> cost_derivative(vector<T> output_activations, int expected) {
     int n = output_activations.size();
-    vector<float> r(n);
+    vector<T> r(n);
     for (int i = 0; i < n; ++i) {
       r[i] = output_activations[i] + (i == expected ? -1: 0);
     }
@@ -590,9 +583,9 @@ int test(Data *training_data) {
 
   {
     vector<int> layer_sizes = {2, 3, 10};
-    Network network(layer_sizes);
-    vector<float> a = {1.0, 2.0};
-    vector<float> b = {3.0, 4.0};
+    Network<double> network(layer_sizes);
+    vector<double> a = {1.0, 2.0};
+    vector<double> b = {3.0, 4.0};
     ps("a+b", a+b);
     ps("dot a, b", dot_scalar(a, b));
     ps(network.feed_forward(a));
@@ -616,10 +609,10 @@ int main(int argc, const char **argv) {
   const string t10k_name = "t10k";
   Data *validation_data = read_idx3_ubyte(t10k_name);
 
-  vector<int> layer_sizes = {784, 3, 10};
+  vector<int> layer_sizes = {784, 30, 30, 10};
 
-  Network network(layer_sizes);
-  network.SGD(training_data, 10, 10, 3.0, validation_data);
+  Network<float> network(layer_sizes);
+  network.SGD(training_data, 200, 10, 0.1, validation_data);
 
   // network.evaluate(validation_data);
   // network.backprop(training_data, 0);
