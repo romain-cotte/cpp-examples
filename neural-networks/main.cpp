@@ -161,13 +161,16 @@ Data<T> *read_idx3_ubyte(string name) {
   cout << "Number of images: " << num_images << endl;
   cout << "Dimensions: " << height << "x" << width << endl;
 
-  for (uint32_t i = 0; i < num_images; ++i) {
 
+  for (uint32_t i = 0; i < num_images; ++i) {
     vector<uint8_t> buffer(height * width);
     images_file.read(reinterpret_cast<char*>(buffer.data()), height * width);
     transform(buffer.begin(), buffer.end(), data->content[i].begin(),
-              [](uint8_t val) { return static_cast<T>(val); });
+              [](uint8_t val) {
+                return static_cast<T>(val) / 255.0;
+              });
   }
+
   images_file.close();
 
   ifstream labels_file(labels_filename, ios::binary);
@@ -324,7 +327,7 @@ struct Network {
   vector<vector<vector<T>>> weights, nabla_w, delta_nabla_w;
   vector<int> layer_sizes;
 
-  Network(vi _layer_sizes) {
+  Network(vi _layer_sizes, bool random = true) {
     layer_sizes = _layer_sizes;
     L = layer_sizes.size() - 1;
     for (int i = 1; i < (int)layer_sizes.size(); ++i) {
@@ -332,15 +335,15 @@ struct Network {
       size_t szp = layer_sizes[i-1];
       vector<T> v(sz);
       generate(v.begin(), v.end(), [&]() {
-        return norm_dist(rng);
-        // return 0.1;
+        if (random) return norm_dist(rng);
+        return 0.1;
       });
       biases.push_back(v);
       vector<vector<T>> wi(sz, vector<T>(szp));
       for (size_t j = 0; j < sz; ++j) {
         for (size_t k = 0; k < szp; ++k) {
-          wi[j][k] = norm_dist(rng);
-          // wi[j][k] = 0.1;
+          if (random) wi[j][k] = norm_dist(rng);
+          else wi[j][k] = 0.1;
         }
       }
       weights.push_back(wi);
@@ -420,8 +423,8 @@ struct Network {
           evaluation = i;
         }
       }
-      // ps(evaluation, data->labels[i]);
       if (evaluation == data->labels[i]) ++cnt;
+      // cout << i << " " << evaluation << " " << data->labels[i] << endl;
     }
     ps(cnt, "/", data->n);
     return cnt;
@@ -550,28 +553,11 @@ int main(int argc, const char **argv) {
   const string t10k_name = "t10k";
   Data<T> *validation_data = read_idx3_ubyte<T>(t10k_name);
 
-  Network<T> network({784, 30, 10});
-  int epochs = 5, mini_batch_size = 10;
-  network.SGD(training_data, epochs, mini_batch_size, 0.5, validation_data);
+  Network<T> network({784, 30, 10}, true);
+  int epochs = 15, mini_batch_size = 10;
 
-  // {
-  //   vector<vector<T>> content = {
-  //     {0, 0},
-  //     {0, 1},
-  //     {1, 0},
-  //     {1, 1}
-  //   };
-  //   vector<int> labels = {0, 1, 1, 0};
+  network.SGD(training_data, epochs, mini_batch_size, 3, validation_data);
 
-  //   Data<T> *training_data = new Data<T>(content, labels);
-  //   Data<T> *validation_data = new Data<T>(content, labels);
-
-  //   Network<T> network({2, 2, 2});
-  //   network.evaluate(validation_data);
-
-  //   int epochs = 100000, mini_batch_size = 1;
-  //   network.SGD(training_data, epochs, mini_batch_size, 0.5, validation_data);
-  // }
 
   fprintf(
     stderr,
