@@ -132,6 +132,8 @@ struct Matrix {
 };
 
 
+
+
 template <class T>
 struct Data {
   uint32_t n, m;
@@ -284,10 +286,10 @@ vector<T> dot(const vector<vector<T>>& m, const vector<T>& a) {
   return r;
 }
 
+
 template<class T>
 vector<T> dot(const Matrix<T>& m, const vector<T>& a) {
   // 4_200_000 calls, 70.68% of time
-
   assert(m.cols == (int)a.size());
   vector<T> r(m.rows);
   for (int l = 0; l < m.rows; ++l) {
@@ -296,6 +298,22 @@ vector<T> dot(const Matrix<T>& m, const vector<T>& a) {
     }
   }
   return r;
+}
+
+
+template<class T>
+void dot(const Matrix<T>& m, const vector<T>& a, vector<T>& r) {
+  // 4_200_000 calls, 70.68% of time
+  assert(m.cols == (int)a.size());
+  assert(m.rows == (int)r.size());
+  // vector<T> r(m.rows);
+  for (int l = 0; l < m.rows; ++l) {
+    r[l] = 0;
+    for (int c = 0; c < m.cols; ++c) {
+      r[l] += m(l, c) * a[c];
+    }
+  }
+  // return r;
 }
 
 
@@ -361,7 +379,7 @@ vector<T> sigmoid_prime(const vector<T> &a) {
 template<class T>
 struct Network {
   int L;
-  vector<vector<T>> biases, nabla_b, delta_nabla_b;
+  vector<vector<T>> biases, nabla_b, delta_nabla_b, buffers;
   vector<Matrix<T>> weights, nabla_w, delta_nabla_w;
   vector<int> layer_sizes;
   vector<vector<T>> activations;
@@ -393,20 +411,8 @@ struct Network {
 
       nabla_b.push_back(vector<T>(sz));
       delta_nabla_b.push_back(vector<T>(sz));
+      buffers.push_back(vector<T>(sz));
     }
-
-    // nabla_b.assign(biases.size(), vector<T>(biases[0].size()));
-    // delta_nabla_b.assign(biases.size(), vector<T>(biases[0].size()));
-
-    // nabla_w.resize(weights.size());
-    // for (int i = 0; i < L; ++i) {
-    //   nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
-    // }
-
-    // delta_nabla_w.resize(weights.size());
-    // for (int i = 0; i < L; ++i) {
-    //   delta_nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
-    // }
 
     activations.resize(L+1);
 
@@ -417,7 +423,11 @@ struct Network {
   vector<T> feed_forward(vector<T> a) {
     // a' = σ(w.a+b)
     for (int i = 0; i < L; ++i) {
-      a = sigmoid(dot(weights[i], a) + biases[i]);
+      dot(weights[i], a, buffers[i]);
+      for (int j = 0; j < (int)biases[i].size(); ++j) {
+        buffers[i][j] += biases[i][j];
+      }
+      a = sigmoid(buffers[i]);
     }
     return a;
   }
@@ -534,10 +544,16 @@ struct Network {
     vector<vector<T>> zs;
 
     for (int i = 0; i < L; ++i) {
-      vector z = dot(weights[i], activation); // + biases[i];
-      for (int j = 0; j < (int)z.size(); ++j) z[j] += biases[i][j];
-      zs.push_back(z);
-      activation = sigmoid(z);
+      // vector z = dot(weights[i], activation); // + biases[i];
+      // for (int j = 0; j < (int)z.size(); ++j) z[j] += biases[i][j];
+
+      dot(weights[i], activation, buffers[i]);
+      for (int j = 0; j < (int)biases[i].size(); ++j) {
+        buffers[i][j] += biases[i][j];
+      }
+
+      zs.push_back(buffers[i]);
+      activation = sigmoid(buffers[i]);
       // activations.push_back(activation);
       activations[i+1] = activation;
     }
