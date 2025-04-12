@@ -22,6 +22,7 @@
 #include <stack>
 #include <stdio.h>
 #include <string>
+#include <thread>
 #include <time.h>
 #include <vector>
 
@@ -130,8 +131,6 @@ struct Matrix {
     return data[i * cols + j];
   }
 };
-
-
 
 
 template <class T>
@@ -379,10 +378,14 @@ vector<T> sigmoid_prime(const vector<T> &a) {
 template<class T>
 struct Network {
   int L;
+  int n_threads = thread::hardware_concurrency();
+  vector<thread> threads;
+  mutex network_mutex;
+
+  vector<int> layer_sizes;
   vector<vector<T>> biases, nabla_b, delta_nabla_b, buffers;
   vector<Matrix<T>> weights, nabla_w, delta_nabla_w;
-  vector<int> layer_sizes;
-  vector<vector<T>> activations;
+
 
   Network(vi _layer_sizes, bool random = true) {
     layer_sizes = _layer_sizes;
@@ -413,8 +416,6 @@ struct Network {
       delta_nabla_b.push_back(vector<T>(sz));
       buffers.push_back(vector<T>(sz));
     }
-
-    activations.resize(L+1);
 
     // ps("biases", biases);
     // ps("weights", weights);
@@ -489,31 +490,57 @@ struct Network {
     return cnt;
   }
 
-  void update_mini_batch(Data<T> *data, const vi &ind, T eta) {
-    // vector<vector<T>> nabla_b(biases.size(), vector<T>(biases[0].size()));
-    nabla_b.assign(biases.size(), vector<T>(biases[0].size(), 0));
 
-    // vector<vector<vector<T>>> nabla_w(weights.size());
-    for (int i = 0; i < L; ++i) {
-      nabla_w[i].init();
-      // nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size(), 0));
-    }
-
-    for (int i = 0; i < (int)ind.size(); ++i) {
-      // vector<uint8_t> data->content[i] => (uint8_t) data->labels[i]
-      // auto [delta_nabla_b, delta_nabla_w] =
-      backprop(data, ind[i]);
-      for (int l = 0; l < L; ++l) {
-        for (int j = 0; j < (int)nabla_b[l].size(); ++j) {
-          nabla_b[l][j] += delta_nabla_b[l][j];
-        }
-        for (int j = 0; j < nabla_w[l].rows; ++j) {
-          for (int k = 0; k < nabla_w[l].cols; ++k) {
-            nabla_w[l](j, k) += delta_nabla_w[l](j, k);
-          }
+  void mini_batch_iteration(Data<T> *data, int i) {
+    auto [delta_nabla_w, delta_nabla_b] = backprop(data, i);
+    network_mutex.lock();
+    for (int l = 0; l < L; ++l) {
+      for (int j = 0; j < (int)nabla_b[l].size(); ++j) {
+        nabla_b[l][j] += delta_nabla_b[l][j];
+      }
+      for (int j = 0; j < nabla_w[l].rows; ++j) {
+        for (int k = 0; k < nabla_w[l].cols; ++k) {
+          nabla_w[l](j, k) += delta_nabla_w[l](j, k);
         }
       }
     }
+    network_mutex.unlock();
+  }
+
+  void update_mini_batch(Data<T> *data, const vi &ind, T eta) {
+    for (int i = 1; i < (int)layer_sizes.size(); ++i) {
+      int l = layer_sizes[i];
+      nabla_b[i-1].assign(l, 0);
+      nabla_w[i-1].init();
+    }
+
+    for (int i = 0; i < (int)ind.size(); ++i) {
+      threads.push_back(thread(&Network::mini_batch_iteration, this, data, ind[i]));
+
+      if ((int)threads.size() == n_threads) {
+        for (thread &thread: threads) {
+          thread.join();
+        }
+        threads.clear();
+      }
+      // auto [delta_nabla_w, delta_nabla_b] = backprop(data, ind[i]);
+      // for (int l = 0; l < L; ++l) {
+      //   for (int j = 0; j < (int)nabla_b[l].size(); ++j) {
+      //     nabla_b[l][j] += delta_nabla_b[l][j];
+      //   }
+      //   for (int j = 0; j < nabla_w[l].rows; ++j) {
+      //     for (int k = 0; k < nabla_w[l].cols; ++k) {
+      //       nabla_w[l](j, k) += delta_nabla_w[l](j, k);
+      //     }
+      //   }
+      // }
+    }
+
+    for (thread &thread: threads) {
+      thread.join();
+    }
+    threads.clear();
+
 
     for (int l = 0; l < L; ++l) {
       for (int i = 0; i < (int)biases[l].size(); ++i) {
@@ -528,7 +555,16 @@ struct Network {
     }
   }
 
-  void backprop(Data<T> *data, int k) {
+  pair<vector<Matrix<T>>, vector<vector<T>>> backprop(Data<T> *data, int k) {
+    vector<vector<T>> delta_nabla_b(L);
+    vector<Matrix<T>> delta_nabla_w;
+
+    for (int i = 1; i < (int)layer_sizes.size(); ++i) {
+      int l = layer_sizes[i];
+      int p = layer_sizes[i-1];
+      delta_nabla_b[i-1].assign(l, 0);
+      delta_nabla_w.push_back(Matrix<T>(l, p));
+    }
     int n = data->content[k].size();
     assert(n == (int)data->m);
     vector<T> activation(n);
@@ -538,24 +574,18 @@ struct Network {
 
     // If already declared in the class, it does not change
     // execution time.
-    // vector<vector<T>> activations = {activation};
-    activations[0] = activation;
+    vector<vector<T>> activations = {activation};
+
 
     vector<vector<T>> zs;
 
     for (int i = 0; i < L; ++i) {
-      // vector z = dot(weights[i], activation); // + biases[i];
-      // for (int j = 0; j < (int)z.size(); ++j) z[j] += biases[i][j];
+      vector z = dot(weights[i], activation); // + biases[i];
+      for (int j = 0; j < (int)z.size(); ++j) z[j] += biases[i][j];
 
-      dot(weights[i], activation, buffers[i]);
-      for (int j = 0; j < (int)biases[i].size(); ++j) {
-        buffers[i][j] += biases[i][j];
-      }
-
-      zs.push_back(buffers[i]);
-      activation = sigmoid(buffers[i]);
-      // activations.push_back(activation);
-      activations[i+1] = activation;
+      zs.push_back(z);
+      activation = sigmoid(z);
+      activations.push_back(activation);
     }
 
     vector<T> delta = dot(
@@ -570,8 +600,6 @@ struct Network {
       }
     }
 
-    // ps(nabla_b, nabla_w);
-
     for (int l = L-2; l >= 0; --l) {
       vector<T> z = zs[l];
       vector<T> sp = sigmoid_prime(z);
@@ -584,8 +612,6 @@ struct Network {
       delta = dot(delta_r, sp);
       delta_nabla_b[l] = delta;
 
-      // ps(delta, activations[l]);
-      // nabla_w[l] = dot(delta, activations[l]);
       for (int i = 0; i < (int)delta.size(); ++i) {
         for (int j = 0; j < (int)activations[l].size(); ++j) {
           delta_nabla_w[l](i, j) = delta[i] * activations[l][j];
@@ -593,8 +619,8 @@ struct Network {
       }
     }
 
-    // ps(nabla_b, nabla_w);
-    // return make_pair(nabla_b, nabla_w);
+
+    return make_pair(delta_nabla_w, delta_nabla_b);
   }
   vector<T> cost_derivative(vector<T> output_activations, int expected) {
     int n = output_activations.size();
@@ -612,6 +638,10 @@ int main(int argc, const char **argv) {
 #ifndef DEBUG_LOCAL
   ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
 #endif
+
+  int num_threads = std::thread::hardware_concurrency();
+  cout << "num_threads: " << num_threads << endl;
+
 
   using T = float;
   clock_t t_clock = clock();
