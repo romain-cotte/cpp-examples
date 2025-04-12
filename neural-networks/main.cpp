@@ -109,6 +109,25 @@ uint32_t read_uint32(ifstream &file) {
   return (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3];
 }
 
+template <typename T>
+struct Matrix {
+  int rows, cols;
+  vector<T> data;
+
+  Matrix(int r, int c) : rows(r), cols(c), data(r * c) {}
+
+  inline T& operator()(int i, int j) {
+    // writting purpose
+    return data[i * cols + j];
+  }
+
+  inline const T& operator()(int i, int j) const {
+    // reading purpose
+    return data[i * cols + j];
+  }
+};
+
+
 template <class T>
 struct Data {
   uint32_t n, m;
@@ -246,6 +265,7 @@ vector<T> dot(const vector<T>& a, const vector<T>& b) {
 
 template<class T>
 vector<T> dot(const vector<vector<T>>& m, const vector<T>& a) {
+  // 4_200_000 calls, 70.68% of time
   int nl = m.size();
   assert(nl >= 1);
   int nc = m[0].size();
@@ -259,6 +279,7 @@ vector<T> dot(const vector<vector<T>>& m, const vector<T>& a) {
   }
   return r;
 }
+
 
 
 template<class T>
@@ -326,6 +347,8 @@ struct Network {
   vector<vector<T>> biases, nabla_b, delta_nabla_b;
   vector<vector<vector<T>>> weights, nabla_w, delta_nabla_w;
   vector<int> layer_sizes;
+  vector<vector<T>> activations;
+
 
   Network(vi _layer_sizes, bool random = true) {
     layer_sizes = _layer_sizes;
@@ -361,6 +384,9 @@ struct Network {
     for (int i = 0; i < L; ++i) {
       delta_nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
     }
+
+    activations.resize(L+1);
+
     // ps("biases", biases);
     // ps("weights", weights);
   }
@@ -431,11 +457,12 @@ struct Network {
   }
 
   void update_mini_batch(Data<T> *data, const vi &ind, T eta) {
-    vector<vector<T>> nabla_b(biases.size(), vector<T>(biases[0].size()));
+    // vector<vector<T>> nabla_b(biases.size(), vector<T>(biases[0].size()));
+    nabla_b.assign(biases.size(), vector<T>(biases[0].size(), 0));
 
-    vector<vector<vector<T>>> nabla_w(weights.size());
+    // vector<vector<vector<T>>> nabla_w(weights.size());
     for (int i = 0; i < L; ++i) {
-      nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
+      nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size(), 0));
     }
 
     for (int i = 0; i < (int)ind.size(); ++i) {
@@ -475,14 +502,20 @@ struct Network {
       activation[i] = data->content[k][i];
     }
 
-    vector<vector<T>> activations = {activation};
+    // If already declared in the class, it does not change
+    // execution time.
+    // vector<vector<T>> activations = {activation};
+    activations[0] = activation;
+
     vector<vector<T>> zs;
 
     for (int i = 0; i < L; ++i) {
-      vector z = dot(weights[i], activation) + biases[i];
+      vector z = dot(weights[i], activation); // + biases[i];
+      for (int j = 0; j < (int)z.size(); ++j) z[j] += biases[i][j];
       zs.push_back(z);
       activation = sigmoid(z);
-      activations.push_back(activation);
+      // activations.push_back(activation);
+      activations[i+1] = activation;
     }
 
     vector<T> delta = dot(
@@ -490,10 +523,7 @@ struct Network {
       sigmoid_prime(zs.back())
     );
 
-    nabla_b.back() = delta;
-    // ps(":", L-1, activations.size() - 2);
-    // nabla_w.back() = dot_nm(delta, activations[L-1]);
-
+    delta_nabla_b.back() = delta;
     for (int i = 0; i < (int)delta.size(); ++i) {
       for (int j = 0; j < (int)activations[L-1].size(); ++j) {
         delta_nabla_w[L-1][i][j] = delta[i] * activations[L-1][j];
@@ -526,7 +556,6 @@ struct Network {
     // ps(nabla_b, nabla_w);
     // return make_pair(nabla_b, nabla_w);
   }
-
   vector<T> cost_derivative(vector<T> output_activations, int expected) {
     int n = output_activations.size();
     vector<T> r(n);
@@ -535,7 +564,6 @@ struct Network {
     }
     return r;
   }
-
 };
 
 
@@ -545,7 +573,7 @@ int main(int argc, const char **argv) {
   ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
 #endif
 
-  using T = double;
+  using T = float;
   clock_t t_clock = clock();
 
   const string train_name = "train";
@@ -554,15 +582,17 @@ int main(int argc, const char **argv) {
   Data<T> *validation_data = read_idx3_ubyte<T>(t10k_name);
 
   Network<T> network({784, 30, 10}, true);
-  int epochs = 15, mini_batch_size = 10;
+  int epochs = 30, mini_batch_size = 10;
 
   network.SGD(training_data, epochs, mini_batch_size, 3, validation_data);
 
-
+  float ms = ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000;
   fprintf(
     stderr,
-    "Time %.3f milliseconds.\n",
-    ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000
+    "Time %.3f milliseconds. %.3f = by iteration\n",
+    ms,
+    ms / epochs
   );
+
   return 0;
 }
