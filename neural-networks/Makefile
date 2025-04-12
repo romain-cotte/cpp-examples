@@ -1,6 +1,8 @@
 CC=g++
 WARNING_FLAGS=-Wall -Wno-deprecated-declarations -Wno-unused-result -Wfatal-errors
 SANITIZE_FLAGS=-fno-sanitize-recover
+# add -pg for gprof
+#
 CFLAGS=-std=c++20 -O3 -D DEBUG_LOCAL=true -D COLOR=false $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix -pg
 LIBS=-lm -lcrypt
 # ifdef DEBUG -> -D DEBUG

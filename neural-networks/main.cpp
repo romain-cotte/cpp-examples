@@ -116,6 +116,10 @@ struct Matrix {
 
   Matrix(int r, int c) : rows(r), cols(c), data(r * c) {}
 
+  inline void init() {
+    for (int i = 0; i < rows*cols; ++i) data[i] = 0;
+  }
+
   inline T& operator()(int i, int j) {
     // writting purpose
     return data[i * cols + j];
@@ -280,6 +284,19 @@ vector<T> dot(const vector<vector<T>>& m, const vector<T>& a) {
   return r;
 }
 
+template<class T>
+vector<T> dot(const Matrix<T>& m, const vector<T>& a) {
+  // 4_200_000 calls, 70.68% of time
+
+  assert(m.cols == (int)a.size());
+  vector<T> r(m.rows);
+  for (int l = 0; l < m.rows; ++l) {
+    for (int c = 0; c < m.cols; ++c) {
+      r[l] += m(l, c) * a[c];
+    }
+  }
+  return r;
+}
 
 
 template<class T>
@@ -345,10 +362,9 @@ template<class T>
 struct Network {
   int L;
   vector<vector<T>> biases, nabla_b, delta_nabla_b;
-  vector<vector<vector<T>>> weights, nabla_w, delta_nabla_w;
+  vector<Matrix<T>> weights, nabla_w, delta_nabla_w;
   vector<int> layer_sizes;
   vector<vector<T>> activations;
-
 
   Network(vi _layer_sizes, bool random = true) {
     layer_sizes = _layer_sizes;
@@ -362,28 +378,35 @@ struct Network {
         return 0.1;
       });
       biases.push_back(v);
-      vector<vector<T>> wi(sz, vector<T>(szp));
+
+      Matrix<T> wi(sz, szp);
+      // vector<vector<T>> wi(sz, vector<T>(szp));
       for (size_t j = 0; j < sz; ++j) {
         for (size_t k = 0; k < szp; ++k) {
-          if (random) wi[j][k] = norm_dist(rng);
-          else wi[j][k] = 0.1;
+          if (random) wi(j, k) = norm_dist(rng);
+          else wi(j, k) = 0.1;
         }
       }
       weights.push_back(wi);
+      nabla_w.push_back(Matrix<T>(sz, szp));
+      delta_nabla_w.push_back(Matrix<T>(sz, szp));
+
+      nabla_b.push_back(vector<T>(sz));
+      delta_nabla_b.push_back(vector<T>(sz));
     }
 
+    // nabla_b.assign(biases.size(), vector<T>(biases[0].size()));
+    // delta_nabla_b.assign(biases.size(), vector<T>(biases[0].size()));
 
-    nabla_b.assign(biases.size(), vector<T>(biases[0].size()));
-    nabla_w.resize(weights.size());
-    for (int i = 0; i < L; ++i) {
-      nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
-    }
+    // nabla_w.resize(weights.size());
+    // for (int i = 0; i < L; ++i) {
+    //   nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
+    // }
 
-    delta_nabla_b.assign(biases.size(), vector<T>(biases[0].size()));
-    delta_nabla_w.resize(weights.size());
-    for (int i = 0; i < L; ++i) {
-      delta_nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
-    }
+    // delta_nabla_w.resize(weights.size());
+    // for (int i = 0; i < L; ++i) {
+    //   delta_nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size()));
+    // }
 
     activations.resize(L+1);
 
@@ -462,7 +485,8 @@ struct Network {
 
     // vector<vector<vector<T>>> nabla_w(weights.size());
     for (int i = 0; i < L; ++i) {
-      nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size(), 0));
+      nabla_w[i].init();
+      // nabla_w[i].assign(weights[i].size(), vector<T>(weights[i][0].size(), 0));
     }
 
     for (int i = 0; i < (int)ind.size(); ++i) {
@@ -473,9 +497,9 @@ struct Network {
         for (int j = 0; j < (int)nabla_b[l].size(); ++j) {
           nabla_b[l][j] += delta_nabla_b[l][j];
         }
-        for (int j = 0; j < (int)nabla_w[l].size(); ++j) {
-          for (int k = 0; k < (int)nabla_w[l][j].size(); ++k) {
-            nabla_w[l][j][k] += delta_nabla_w[l][j][k];
+        for (int j = 0; j < nabla_w[l].rows; ++j) {
+          for (int k = 0; k < nabla_w[l].cols; ++k) {
+            nabla_w[l](j, k) += delta_nabla_w[l](j, k);
           }
         }
       }
@@ -486,9 +510,9 @@ struct Network {
         biases[l][i] -= eta * nabla_b[l][i] / ind.size();
       }
 
-      for (int i = 0; i < (int)weights[l].size(); ++i) {
-        for (int j = 0; j < (int)weights[l][i].size(); ++j) {
-          weights[l][i][j] -= eta * nabla_w[l][i][j] / ind.size();
+      for (int i = 0; i < weights[l].rows; ++i) {
+        for (int j = 0; j < weights[l].cols; ++j) {
+          weights[l](i, j) -= eta * nabla_w[l](i, j) / ind.size();
         }
       }
     }
@@ -526,7 +550,7 @@ struct Network {
     delta_nabla_b.back() = delta;
     for (int i = 0; i < (int)delta.size(); ++i) {
       for (int j = 0; j < (int)activations[L-1].size(); ++j) {
-        delta_nabla_w[L-1][i][j] = delta[i] * activations[L-1][j];
+        delta_nabla_w[L-1](i, j) = delta[i] * activations[L-1][j];
       }
     }
 
@@ -535,10 +559,10 @@ struct Network {
     for (int l = L-2; l >= 0; --l) {
       vector<T> z = zs[l];
       vector<T> sp = sigmoid_prime(z);
-      vector<T> delta_r(weights[l+1][0].size());
-      for (int i = 0; i < (int)weights[l+1].size(); ++i) {
-        for (int j = 0; j < (int)weights[l+1][i].size(); ++j) {
-          delta_r[j] += weights[l+1][i][j] * delta[i];
+      vector<T> delta_r(weights[l+1].cols);
+      for (int i = 0; i < weights[l+1].rows; ++i) {
+        for (int j = 0; j < weights[l+1].cols; ++j) {
+          delta_r[j] += weights[l+1](i, j) * delta[i];
         }
       }
       delta = dot(delta_r, sp);
@@ -548,7 +572,7 @@ struct Network {
       // nabla_w[l] = dot(delta, activations[l]);
       for (int i = 0; i < (int)delta.size(); ++i) {
         for (int j = 0; j < (int)activations[l].size(); ++j) {
-          delta_nabla_w[l][i][j] = delta[i] * activations[l][j];
+          delta_nabla_w[l](i, j) = delta[i] * activations[l][j];
         }
       }
     }

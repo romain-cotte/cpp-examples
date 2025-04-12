@@ -14,11 +14,19 @@ When using same nabla
 30 iterations : Time 66456.492 milliseconds.
 = 2215 ms by iteration
 
+Changing for the Matrix structure:
+30 iterations : Time 69218.727 milliseconds.
+= 2307 ms by iteration
 
 
 
+# Profiling
 
+Add `-pg` to the flags, execute the main, then
 
+```sh
+gprof ./main gmon.out > gprof<i>.out
+```
 
 
 # XOR
