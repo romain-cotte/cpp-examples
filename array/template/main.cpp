@@ -88,52 +88,20 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
-const int MOD = 10000;
-array<int, 4> F = {0, 1, 1, 1};
 
-array<int, 4> mult(const array<int, 4> &a, const array<int, 4> &b) {
-  return {
-    (a[0]*b[0]+a[1]*b[2])%MOD,
-    (a[0]*b[1]+a[1]*b[3])%MOD,
-    (a[2]*b[0]+a[3]*b[2])%MOD,
-    (a[2]*b[1]+a[3]*b[3])%MOD
-  };
-}
-
-array<int, 4> power(const array<int, 4> &a, ll p) {
-  assert(p >= 1);
-  if (p == 1) return a;
-  if (p%2 == 0) {
-    auto r = power(a, p/2);
-    return mult(r, r);
+template<typename T, size_t N>
+void print(const array<T, N>& arr) {
+  for (const auto& elem : arr) {
+      std::cout << elem << " ";
   }
-  return mult(power(a, p-1), F);
+  std::cout << "\n";
 }
-
 
 int main(int argc, const char **argv) {
-#ifndef DEBUG_LOCAL
-  ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
-#endif
-  array<int, 4> f = {0, 1, 1, 1};
-  array<int, 4> c = {0, 1, 1, 1};
-  for (int i = 2; i <= 30; ++i) {
-    c = mult(c, f);
-    ps(i, c);
-  }
-  for (int i = 2; i <= 10; ++i) {
-    ps(i, power(F, i));
-  }
+  array<int, 4> a{1, 2, 3, 4};
+  array<int, 5> b{1, 2, 3, 4, 5};
+  print(a);
+  print(b);
 
-  clock_t t_clock = clock();
-  ps(power(F, 1E15));
-  fprintf(
-    stderr,
-    "Time %.3f milliseconds.\n",
-    ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000
-  );
-
-  ps((ll)1E15);
   return 0;
 }
-
