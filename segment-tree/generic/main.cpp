@@ -144,13 +144,13 @@ struct Seg_Tree {
     cout << endl;
   }
 
-  node query(int x, int nl, int nr, int ql, int qr) {
-    push(x, nl, nr);
-    if (ql <= nl && nr <= qr) return tree[x];
-    if (qr < nl || nr < ql) return { true };
-    int mid = (nl + nr) / 2;
-    node q1 = query(2 * x + 1, nl   , mid, ql, qr);
-    node q2 = query(2 * x + 2, mid+1,  nr, ql, qr);
+  node query(int x, int l, int r, int ql, int qr) {
+    push(x, l, r);
+    if (ql <= l && r <= qr) return tree[x];
+    if (qr < l || r < ql) return { true };
+    int mid = (l + r) / 2;
+    node q1 = query(2 * x + 1, l   , mid, ql, qr);
+    node q2 = query(2 * x + 2, mid+1,  r, ql, qr);
     if (q1.is_null) return q2;
     if (q2.is_null) return q1;
     return unite(q1, q2);
@@ -178,6 +178,9 @@ struct Seg_Tree {
     return update(0, 0, n-1, idx, value);
   }
 
+
+  // push down the modification, you don't have the children responses in this
+  // case, just the range
   void push(int x, int pl, int pr) {
     if (tree[x].add != 0) {
       tree[x].apply(pl, pr, tree[x].add);
@@ -212,6 +215,154 @@ struct Seg_Tree {
     update_range(0, 0, n-1, l, r, value);
   }
 };
+
+
+
+
+/*
+
+More advanced version with all operation inside node
+
+struct Seg_Tree {
+  // WARNING: * how shoud I set the value v? += or =?
+  //          * unite function +?
+
+  struct node {
+    bool is_null = false;
+    int mn = 0;
+    int sum = 0;
+    int lca = 0;
+
+    int add = 0;
+    int l = -1, r = -1;
+    node set(int _l, int _r, int value) {
+      l = _l; r = _r;
+      mn = depth[value];
+      sum = depth[value];
+      lca = value;
+      cnt0 = depth[value] == 0;
+      return *this;
+    }
+    void apply(int l, int r, int value) {
+      mn = max(0, mn+value);
+      sum = max(0, sum + (r-l+1-cnt0) * value);
+    }
+  };
+
+  node unite(const node &a, const node &b) {
+    // printf(
+    //   "unite [%d %d] and [%d %d]: %lld and %lld\n",
+    //   a.l, a.r, b.l, b.r, a.val, b.val
+    // );
+    node r;
+    r.l = a.l; r.r = b.r;
+    r.mn = min(a.mn, b.mn);
+    r.sum = a.sum + b.sum;
+    r.lca = LCA(a.lca, b.lca);
+    return r;
+  }
+  int n;
+  vi a;
+  vector<node> tree;
+
+  Seg_Tree(int _n): n(_n) {
+    a.resize(n);
+    tree.resize(4 * n);
+  };
+  Seg_Tree(const vi &v): n(v.size()) {
+    a = v;
+    tree.resize(4 * n);
+    build();
+  }
+  node build(int x, int l, int r) {
+    if (l == r) { return tree[x].set(l, r, a[l]); }
+    int mid = (l + r) / 2;
+    node r1 = build(2 * x + 1,     l, mid);
+    node r2 = build(2 * x + 2, mid+1,  r);
+    return tree[x] = unite(r1, r2);
+  }
+
+  node build() { return build(0, 0, n-1); }
+
+  void print() {
+    for (int i = 0; i < n; ++i) {
+      cout << "[" << query(i, i).mn << ", " << query(i, i).sum << ", "
+           << query(i, i).lca << "]" << endl;
+    }
+    cout << endl;
+  }
+
+  node query(int x, int nl, int nr, int ql, int qr) {
+    push(x, nl, nr);
+    if (ql <= nl && nr <= qr) return tree[x];
+    if (qr < nl || nr < ql) return { true };
+    int mid = (nl + nr) / 2;
+    node q1 = query(2 * x + 1, nl   , mid, ql, qr);
+    node q2 = query(2 * x + 2, mid+1,  nr, ql, qr);
+    if (q1.is_null) return q2;
+    if (q2.is_null) return q1;
+    return unite(q1, q2);
+  }
+
+  node query(int start_idx, int end_idx) {
+    assert(start_idx <= end_idx && start_idx < n && end_idx < n);
+    return query(0, 0, n-1, start_idx, end_idx);
+  }
+
+  void update(int x, int nl, int nr, int idx, int value) {
+    if (idx < nl || nr < idx) return;
+    if (nl == nr) {
+      a[idx] = value;
+      tree[x].set(nl, nr, value);
+      return;
+    }
+    int mid = (nl + nr) / 2;
+    update(2 * x + 1, nl   , mid, idx, value);
+    update(2 * x + 2, mid+1,  nr, idx, value);
+    tree[x] = unite(tree[2*x+1], tree[2*x+2]);
+  }
+  void update(int idx, int value) {
+    assert(idx < n);
+    return update(0, 0, n-1, idx, value);
+  }
+
+  void push(int x, int pl, int pr) {
+    if (tree[x].add != 0) {
+      tree[x].apply(pl, pr, tree[x].add);
+      if (pl != pr) {
+        tree[2*x+1].add += tree[x].add;
+        tree[2*x+2].add += tree[x].add;
+      }
+      tree[x].add = 0;
+    }
+  }
+
+  void update_range(int x, int pl, int pr, int l, int r, int value) {
+    push(x, pl, pr);
+    if (r < pl || pr < l) return;
+    if (l <= pl && pr <= r) {
+      tree[x].apply(pl, pr, value);
+      if (pl != pr) {
+        tree[2*x+1].add += value;
+        tree[2*x+2].add += value;
+      }
+      return;
+    }
+
+    int mid = (pl + pr) / 2;
+    update_range(2 * x + 1,    pl, mid, l, r, value);
+    update_range(2 * x + 2, mid+1,  pr, l, r, value);
+    tree[x] = unite(tree[2*x+1], tree[2*x+2]);
+  }
+
+  void update_range(int l, int r, ll value) {
+    assert(l < n && r < n);
+    update_range(0, 0, n-1, l, r, value);
+  }
+};
+
+*/
+
 
 
 int main(int argc, const char **argv) {
