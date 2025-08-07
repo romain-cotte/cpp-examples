@@ -1,7 +1,7 @@
 CC=g++
 WARNING_FLAGS=-Wall -Wno-deprecated-declarations -Wno-unused-result -Wfatal-errors
 SANITIZE_FLAGS=-fno-sanitize-recover
-CFLAGS=-std=c++17 -O2 -D DEBUG_LOCAL=true -D COLOR=true $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix
+CFLAGS=-std=c++17 -O3 -D DEBUG_LOCAL=true -D COLOR=true $(WARNING_FLAGS) $(SANITIZE_FLAGS) -g -posix
 LIBS=-lm -lcrypt
 # ifdef DEBUG -> -D DEBUG
 
@@ -16,20 +16,7 @@ debug:
 main: compile_main
 	./main < main.in | tee main.out
 
-ex1:
-	$(CC) $(CFLAGS) -o ex1 ex1.cpp $(LIBS)
-	./ex1
-
-ex2:
-	$(CC) $(CFLAGS) -o ex2 ex2.cpp $(LIBS)
-	./ex2
-
-ex3:
-	$(CC) $(CFLAGS) -o ex3 ex3.cpp $(LIBS)
-	./ex3
-
-
 clean:
 	rm -rf *.o main
 
-.PHONY: all main ex1 ex2 ex3
+.PHONY: main

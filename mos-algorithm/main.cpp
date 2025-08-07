@@ -95,136 +95,84 @@ typedef vector<ii> vii;
 random_device rd;
 mt19937 gen(chrono::steady_clock::now().time_since_epoch().count());
 
-
-struct Sqrt_Decomp {
-  int n, m;
-  vector<int> a;
-  vector<ll> b;
-  Sqrt_Decomp(const vector<int> &_a) : n(_a.size()) {
-    a = _a;
-    m = sqrt(n)+1;
-    b.resize(m);
-    for (int i = 0; i < n; ++i) {
-      b[i/m] += a[i];
-    }
-  }
-
-  ll query(int l, int r) {
-    ll T = 0;
-    int lb = l / m, rb = r / m;
-    if (lb == rb) {
-      for (int i = l; i <= r; ++i) {
-        T += a[i];
-      }
-    } else {
-      for (int i = l; i < m * (lb+1); ++i) {
-        T += a[i];
-      }
-      for (int i = lb+1; i <= rb-1; ++i) {
-        T += b[i];
-      }
-      for (int i = m*rb; i <= r; ++i) {
-        T += a[i];
-      }
-    }
-    return T;
+int block_size;
+struct Query {
+  int l, r, idx;
+  Query(int _l, int _r, int _idx) : l(_l), r(_r), idx(_idx) {}
+  bool operator<(const Query &rhs) const {
+    return make_pair(l / block_size, r) <
+           make_pair(rhs.l / block_size, rhs.r);
   }
 };
 
 
 int main(int argc, const char **argv) {
-  const int n = 20;
-  int s = sqrt(n) + 1;
-  uniform_int_distribution<>dist(1, 100);
+  const int n = 1'000'000;
+  const int m = 100'000;
 
-  ps("n", n, "s", s);
-  vi a(n);
-  vi b(s);
+  // Tutorial said that make the block_size a const
+  // improve efficienty however, in practice it's
+  // equivalent 8204.429 milliseconds instead of
+  // 8310.155 milliseconds
+  block_size = sqrt(n) + 1;
+
+
+
+  ps("block_size", block_size);
+
+  uniform_int_distribution<>dist(1, 100);
+  uniform_int_distribution<>dist0_n(0, n-1);
+
+  vi a(n); vii Q(m);
   for (int i = 0; i < n; ++i) {
     a[i] = dist(gen);
   }
-
-  for (int i = 0; i < n; ++i) {
-    b[i/s] += a[i];
+  for (int i = 0; i < m; ++i) {
+    int l = dist0_n(gen), r = dist0_n(gen);
+    if (i == 0) {
+      l = 0, r = 1;
+    }
+    if (r < l) swap(l, r);
+    Q[i] = {l, r};
   }
-  ps(a);
-  ps(b);
 
-  Sqrt_Decomp sqrt_d(a);
+  clock_t t_clock = clock();
+  vector<Query> qs;
+  for (int i = 0; i < m; ++i) {
+    qs.push_back(Query(Q[i].first, Q[i].second, i));
+  }
+  sort(qs.begin(), qs.end());
+  vi ans(m);
+  int cl = 0, cr = -1;
+  ll T = 0;
+  for (int i = 0; i < m; ++i) {
+    Query q = qs[i];
+    while (cr < q.r) {
+      T += a[++cr];
+    }
+    while (q.r < cr) {
+      T -= a[cr--];
+    }
+    while (cl < q.l) {
+      T -= a[cl++];
+    }
+    while (q.l < cl) {
+      T += a[--cl];
+    }
+    ans[q.idx] = T;
+  }
 
-  auto sum = [&](int l, int r) {
-    int S = 0, T = 0, U = 0;
-    for (int i = l; i <= r; ++i) {
+  for (int q = 0; q < m; ++q) {
+    ll S = 0;
+    for (int i = Q[q].first; i <= Q[q].second; ++i) {
       S += a[i];
     }
-    int lb = (l+s-1) / s;
-    int rb = r / s;
-
-    if (lb >= rb) {
-      for (int i = l; i <= r; ++i) {
-        T += a[i];
-      }
-    } else {
-      for (int i = l; i < s * lb; ++i) {
-        T += a[i];
-      }
-      for (int i = lb; i < rb; ++i) {
-        T += b[i];
-      }
-      for (int i = s * rb; i <= r; ++i) {
-        T += a[i];
-      }
-    }
-    if (S != T) {
-      ps(l, r, lb, rb, S, T);
-    }
-    assert(S == T);
-
-    // Another simpler way to compute the indexes
-    // but divisions are more expensive
-    for (int i = l; i <= r; ) {
-      if (i % s == 0 && i+s-1 <= r) {
-        U += b[i/s];
-        i += s;
-      } else {
-        U += a[i];
-        ++i;
-      }
-    }
-    if (S != U) {
-      ps(l, r, lb, rb, S, U);
-    }
-    assert(S == U);
-
-    // Solution 3
-    T = 0;
-    lb = l / s, rb = r / s;
-    if (lb == rb) {
-      for (int i = l; i <= r; ++i) {
-        T += a[i];
-      }
-    } else {
-      for (int i = l; i < s * (lb+1); ++i) {
-        T += a[i];
-      }
-      for (int i = lb+1; i <= rb-1; ++i) {
-        T += b[i];
-      }
-      for (int i = s*rb; i <= r; ++i) {
-        T += a[i];
-      }
-    }
-    assert(S == T);
-    assert(S == sqrt_d.query(l, r));
-    return S;
-  };
-
-
-  for (int l = 0; l < n; ++l) {
-    for (int r = l; r < n; ++r) {
-      sum(l, r);
-    }
+    assert(S == ans[q]);
   }
-
+  fprintf(
+    stderr,
+    "Time %.3f milliseconds.\n",
+    ((float)(clock() - t_clock)/CLOCKS_PER_SEC) * 1000
+  );
   return 0;
 }

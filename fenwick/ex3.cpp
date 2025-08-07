@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <assert.h>
 #include <bitset>
-#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <functional>
@@ -89,142 +88,88 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
-/**
- * SQRT decomposition, see https://cp-algorithms.com/data_structures/sqrt_decomposition.html
- */
-random_device rd;
-mt19937 gen(chrono::steady_clock::now().time_since_epoch().count());
+const int NN = 1E5+5;
+int c[NN];
+int n = 10000;
 
 
-struct Sqrt_Decomp {
-  int n, m;
-  vector<int> a;
-  vector<ll> b;
-  Sqrt_Decomp(const vector<int> &_a) : n(_a.size()) {
-    a = _a;
-    m = sqrt(n)+1;
-    b.resize(m);
-    for (int i = 0; i < n; ++i) {
-      b[i/m] += a[i];
+template<class T = ll>
+struct Fenwick_Tree {
+  vector<T> bit;
+  int n;
+  ll total = 0;
+  Fenwick_Tree() {}
+  Fenwick_Tree(int _n): n(_n) {
+    bit.resize(n+2);
+  }
+  inline int low_bit(int idx) { return idx&(-idx); }
+  T sum(int idx) {
+    T ret = 0;
+    ++idx;
+    for (int k = idx; k>0; k-=low_bit(k)) {
+      ret += bit[k];
+    }
+    return ret;
+  }
+  void update(int idx, int v) {
+    total += v;
+    assert(idx >= 0 && idx <= n);
+    ++idx;
+    for (int k = idx; k < n+2; k+=low_bit(k)) {
+      bit[k] += v;
     }
   }
-
-  ll query(int l, int r) {
-    ll T = 0;
-    int lb = l / m, rb = r / m;
-    if (lb == rb) {
-      for (int i = l; i <= r; ++i) {
-        T += a[i];
-      }
-    } else {
-      for (int i = l; i < m * (lb+1); ++i) {
-        T += a[i];
-      }
-      for (int i = lb+1; i <= rb-1; ++i) {
-        T += b[i];
-      }
-      for (int i = m*rb; i <= r; ++i) {
-        T += a[i];
+  T query(int l, int r) {
+    assert(r <= n);
+    assert(l <= r);
+    return sum(r) - sum(l-1);
+  }
+  T query_lte(int x) {
+    if (x < 0) return 0;
+    return query(0, x);
+  }
+  T query_gte(int x) {
+    return total - query_lte(x-1);
+  }
+  int find_kth(int x) {
+    // smallest k that query_lte(k) >= x
+    int p = 0;
+    for (int i = 20; i >= 0; --i) {
+      if (p+(1<<i) <= n+1 && bit[p+(1<<i)]<x) {
+        x -= bit[p+(1<<i)];
+        p += 1 << i;
       }
     }
-    return T;
+    return p;
   }
 };
 
 
 int main(int argc, const char **argv) {
-  const int n = 20;
-  int s = sqrt(n) + 1;
-  uniform_int_distribution<>dist(1, 100);
+#ifndef DEBUG_LOCAL
+  ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
+#endif
 
-  ps("n", n, "s", s);
-  vi a(n);
-  vi b(s);
-  for (int i = 0; i < n; ++i) {
-    a[i] = dist(gen);
+  int n = 200;
+
+
+  Fenwick_Tree<ll> ft(n);
+
+  ft.update(10, 1);
+  ft.update(11, 1);
+  ft.update(15, 1);
+  ft.update(100, 10);
+  ft.update(150, 1);
+  ft.update(200, 1);
+
+  for (int i = 0; i < 20; ++i) {
+    ps(i, ft.find_kth(i));
   }
 
-  for (int i = 0; i < n; ++i) {
-    b[i/s] += a[i];
-  }
-  ps(a);
-  ps(b);
-
-  Sqrt_Decomp sqrt_d(a);
-
-  auto sum = [&](int l, int r) {
-    int S = 0, T = 0, U = 0;
-    for (int i = l; i <= r; ++i) {
-      S += a[i];
-    }
-    int lb = (l+s-1) / s;
-    int rb = r / s;
-
-    if (lb >= rb) {
-      for (int i = l; i <= r; ++i) {
-        T += a[i];
-      }
-    } else {
-      for (int i = l; i < s * lb; ++i) {
-        T += a[i];
-      }
-      for (int i = lb; i < rb; ++i) {
-        T += b[i];
-      }
-      for (int i = s * rb; i <= r; ++i) {
-        T += a[i];
-      }
-    }
-    if (S != T) {
-      ps(l, r, lb, rb, S, T);
-    }
-    assert(S == T);
-
-    // Another simpler way to compute the indexes
-    // but divisions are more expensive
-    for (int i = l; i <= r; ) {
-      if (i % s == 0 && i+s-1 <= r) {
-        U += b[i/s];
-        i += s;
-      } else {
-        U += a[i];
-        ++i;
-      }
-    }
-    if (S != U) {
-      ps(l, r, lb, rb, S, U);
-    }
-    assert(S == U);
-
-    // Solution 3
-    T = 0;
-    lb = l / s, rb = r / s;
-    if (lb == rb) {
-      for (int i = l; i <= r; ++i) {
-        T += a[i];
-      }
-    } else {
-      for (int i = l; i < s * (lb+1); ++i) {
-        T += a[i];
-      }
-      for (int i = lb+1; i <= rb-1; ++i) {
-        T += b[i];
-      }
-      for (int i = s*rb; i <= r; ++i) {
-        T += a[i];
-      }
-    }
-    assert(S == T);
-    assert(S == sqrt_d.query(l, r));
-    return S;
-  };
-
-
-  for (int l = 0; l < n; ++l) {
-    for (int r = l; r < n; ++r) {
-      sum(l, r);
-    }
-  }
+  // modify(10, 100);
+  // modify(11, 100);
+  // modify(15, 100);
+  // cout << find(20) << endl;
 
   return 0;
 }
