@@ -70,7 +70,7 @@ template<class Arg, class... Args> void _ps_continue(const Arg& first, const Arg
   pr(" ", first); _ps_continue(rest...);
 }
 
-#ifdef DEBUG_LOCAL
+#if defined(DEBUG_LOCAL) && DEBUG_LOCAL
 template<class Arg, class... Args> void ps(const Arg& first, const Args&... rest) {
   pr(first); _ps_continue(rest...);
 }
@@ -88,45 +88,12 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
+
+
 int main(int argc, const char **argv) {
-  {
-    vi a = {1, 5, 6, 10, 105};
-    vi b = {8, 15, 50, 150};
-    vi c;
-    merge(a.begin(), a.end(), b.begin(), b.end(), back_inserter(c));
-    vi exp = {1, 5, 6, 8, 10, 15, 50, 105, 150};
-    assert(c == exp);
-    ps(c);
-  }
-  {
-    vi a = {1, 5, 6, 10, 105};
-    vi b = {8, 15, 50, 150};
-    vi c(a.size() + b.size());
-    merge(a.begin(), a.end(), b.begin(), b.end(), c.begin());
-    // The compare function can be specified
-    // merge(a.begin(), a.end(), b.begin(), b.end(), c.begin(), [](int a, int b) {
-    //   return a < b;
-    // });
-    vi exp = {1, 5, 6, 8, 10, 15, 50, 105, 150};
-    assert(c == exp);
-  }
-
-  {
-    vi v = {1, 10, 12, 50, 2, 15, 45, 56};
-    //      l1         r1 l2          r2
-    vi c;
-    merge(v.begin(), v.begin()+4, v.begin()+4, v.end(), back_inserter(c));
-    vi exp = {1, 2, 10, 12, 15, 45, 50, 56};
-    assert(c == exp);
-  }
-
-  {
-    vi v = {1, 10, 12, 50, 2, 15, 45, 56};
-    //      l1         r1 l2          r2
-    inplace_merge(v.begin(), v.begin()+4, v.end());
-    vi exp = {1, 2, 10, 12, 15, 45, 50, 56};
-    assert(v == exp);
-  }
+#ifndef DEBUG_LOCAL
+  ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
+#endif
 
 
   return 0;

@@ -88,87 +88,23 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
-const int NN = 1E5+5;
-int c[NN];
-int n = 10000;
-
-
-template<class T = ll>
-struct Fenwick_Tree {
-  vector<T> bit;
-  int n;
-  ll total = 0;
-  Fenwick_Tree() {}
-  Fenwick_Tree(int _n): n(_n) {
-    bit.resize(n+2);
-  }
-  inline int low_bit(int idx) { return idx&(-idx); }
-  T sum(int idx) {
-    T ret = 0;
-    ++idx;
-    for (int k = idx; k>0; k-=low_bit(k)) {
-      ret += bit[k];
-    }
-    return ret;
-  }
-  void update(int idx, int v) {
-    total += v;
-    assert(idx >= 0 && idx <= n);
-    ++idx;
-    for (int k = idx; k < n+2; k+=low_bit(k)) {
-      bit[k] += v;
-    }
-  }
-  T query(int l, int r) {
-    assert(r <= n);
-    assert(l <= r);
-    return sum(r) - sum(l-1);
-  }
-  T query_lte(int x) {
-    if (x < 0) return 0;
-    return query(0, x);
-  }
-  T query_gte(int x) {
-    return total - query_lte(x-1);
-  }
-  int find_kth(int x) {
-    // smallest k that query_lte(k) >= x
-    int p = 0;
-    for (int i = 20; i >= 0; --i) {
-      if (p+(1<<i) <= n+1 && bit[p+(1<<i)]<x) {
-        x -= bit[p+(1<<i)];
-        p += 1 << i;
-      }
-    }
-    return p;
-  }
-};
-
 
 int main(int argc, const char **argv) {
 #ifndef DEBUG_LOCAL
   ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
 #endif
 
-  int n = 200;
 
-  Fenwick_Tree<ll> ft(n);
 
-  ft.update(10, 1);
-  ft.update(11, 1);
-  ft.update(15, 1);
-  ft.update(100, 10);
-  ft.update(150, 1);
-  ft.update(200, 1);
 
-  for (int i = 0; i < 20; ++i) {
-    ps(i, ft.find_kth(i));
-  }
 
-  // modify(10, 100);
-  // modify(11, 100);
-  // modify(15, 100);
-  // cout << find(20) << endl;
+
+
+
+
+
+
+
 
   return 0;
 }

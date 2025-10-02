@@ -70,7 +70,7 @@ template<class Arg, class... Args> void _ps_continue(const Arg& first, const Arg
   pr(" ", first); _ps_continue(rest...);
 }
 
-#if defined(DEBUG_LOCAL) && DEBUG_LOCAL
+#ifdef DEBUG_LOCAL
 template<class Arg, class... Args> void ps(const Arg& first, const Args&... rest) {
   pr(first); _ps_continue(rest...);
 }
@@ -88,87 +88,46 @@ typedef vector<vi> vvi;
 typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
-const int NN = 1E5+5;
-int c[NN];
-int n = 10000;
-
-
-template<class T = ll>
-struct Fenwick_Tree {
-  vector<T> bit;
-  int n;
-  ll total = 0;
-  Fenwick_Tree() {}
-  Fenwick_Tree(int _n): n(_n) {
-    bit.resize(n+2);
-  }
-  inline int low_bit(int idx) { return idx&(-idx); }
-  T sum(int idx) {
-    T ret = 0;
-    ++idx;
-    for (int k = idx; k>0; k-=low_bit(k)) {
-      ret += bit[k];
-    }
-    return ret;
-  }
-  void update(int idx, int v) {
-    total += v;
-    assert(idx >= 0 && idx <= n);
-    ++idx;
-    for (int k = idx; k < n+2; k+=low_bit(k)) {
-      bit[k] += v;
-    }
-  }
-  T query(int l, int r) {
-    assert(r <= n);
-    assert(l <= r);
-    return sum(r) - sum(l-1);
-  }
-  T query_lte(int x) {
-    if (x < 0) return 0;
-    return query(0, x);
-  }
-  T query_gte(int x) {
-    return total - query_lte(x-1);
-  }
-  int find_kth(int x) {
-    // smallest k that query_lte(k) >= x
-    int p = 0;
-    for (int i = 20; i >= 0; --i) {
-      if (p+(1<<i) <= n+1 && bit[p+(1<<i)]<x) {
-        x -= bit[p+(1<<i)];
-        p += 1 << i;
-      }
-    }
-    return p;
-  }
-};
-
-
 int main(int argc, const char **argv) {
-#ifndef DEBUG_LOCAL
-  ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
-#endif
-
-  int n = 200;
-
-  Fenwick_Tree<ll> ft(n);
-
-  ft.update(10, 1);
-  ft.update(11, 1);
-  ft.update(15, 1);
-  ft.update(100, 10);
-  ft.update(150, 1);
-  ft.update(200, 1);
-
-  for (int i = 0; i < 20; ++i) {
-    ps(i, ft.find_kth(i));
+  {
+    vi a = {1, 5, 6, 10, 105};
+    vi b = {8, 15, 50, 150};
+    vi c;
+    merge(a.begin(), a.end(), b.begin(), b.end(), back_inserter(c));
+    vi exp = {1, 5, 6, 8, 10, 15, 50, 105, 150};
+    assert(c == exp);
+    ps(c);
+  }
+  {
+    vi a = {1, 5, 6, 10, 105};
+    vi b = {8, 15, 50, 150};
+    vi c(a.size() + b.size());
+    merge(a.begin(), a.end(), b.begin(), b.end(), c.begin());
+    // The compare function can be specified
+    // merge(a.begin(), a.end(), b.begin(), b.end(), c.begin(), [](int a, int b) {
+    //   return a < b;
+    // });
+    vi exp = {1, 5, 6, 8, 10, 15, 50, 105, 150};
+    assert(c == exp);
   }
 
-  // modify(10, 100);
-  // modify(11, 100);
-  // modify(15, 100);
-  // cout << find(20) << endl;
+  {
+    vi v = {1, 10, 12, 50, 2, 15, 45, 56};
+    //      l1         r1 l2          r2
+    vi c;
+    merge(v.begin(), v.begin()+4, v.begin()+4, v.end(), back_inserter(c));
+    vi exp = {1, 2, 10, 12, 15, 45, 50, 56};
+    assert(c == exp);
+  }
+
+  {
+    vi v = {1, 10, 12, 50, 2, 15, 45, 56};
+    //      l1         r1 l2          r2
+    inplace_merge(v.begin(), v.begin()+4, v.end());
+    vi exp = {1, 2, 10, 12, 15, 45, 50, 56};
+    assert(v == exp);
+  }
+
 
   return 0;
 }
