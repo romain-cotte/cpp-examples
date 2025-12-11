@@ -11,7 +11,7 @@ compile_main:
 	$(CC) $(CFLAGS) -o $(BIN) main.cpp $(LIBS)
 
 compile_gen:
-	$(CC) $(CFLAGS) -o $(BIN) gen.cpp $(LIBS)
+	$(CC) $(CFLAGS) -o gen gen.cpp $(LIBS)
 
 
 debug:

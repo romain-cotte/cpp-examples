@@ -96,38 +96,64 @@ int main(int argc, const char **argv) {
 #ifndef DEBUG_LOCAL
   ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
 #endif
-  int n, m; cin >> n >> m;
+  int n = 5;
+  // cin >> n >> m;
   vi vis(n+1);
+  vi rec(n+1);
   vvi G(n+1);
-  int cookie = 1;
 
-  for (int i = 0; i < m; ++i) {
-    int u, v; cin >> u >> v;
-    G[u].push_back(v);
-  }
-
-  function<bool(int)> dfs;
-  dfs = [&](int u) {
-    vis[u] = cookie;
+  function<bool(int)> dfs_is_cyclic;
+  dfs_is_cyclic = [&](int u) {
+    if (vis[u]) return false;
+    vis[u] = 1;
+    rec[u] = 1;
     for (int v: G[u]) {
-      if (vis[v] == cookie) return true;
-      if (!vis[v]) {
-        if (dfs(v)) return true;
+      ps(u, "->", v);
+      if (rec[v]) return true;
+      if (!vis[v] && dfs_is_cyclic(v)) return true;
+    }
+    rec[u] = 0;
+    return false;
+  };
+  auto is_cyclic = [&]() {
+    for (int u = 1; u <= n; ++u) {
+      if (!vis[u]) {
+        if (dfs_is_cyclic(u)) return true;
       }
     }
     return false;
   };
 
-  bool ans = false;
-  for (int u = 1; u <= n; ++u) {
-    if (!vis[u]) {
-      cookie++;
-      ans = ans || dfs(u);
-    }
-  }
-  ps(vis);
+  int cookie = 1;
 
-  cout << ans << endl;
+  function<bool(int)> dfs_is_cyclic_wrong;
+  dfs_is_cyclic_wrong = [&](int u) {
+    vis[u] = cookie;
+    for (int v: G[u]) {
+      if (vis[v] == cookie) return true;
+      if (!vis[v]) {
+        if (dfs_is_cyclic_wrong(v)) return true;
+      }
+    }
+    return false;
+  };
+
+
+  auto is_cyclic_wrong = [&]() {
+    for (int u = 1; u <= n; ++u) {
+      if (!vis[u] && dfs_is_cyclic_wrong(u)) return true;
+    }
+    return false;
+  };
+
+
+  G[1] = {2, 3};
+  G[2] = {5};
+  G[3] = {5};
+  G[4] = {};
+  G[5] = {};
+  ps(is_cyclic(), is_cyclic_wrong());
+
 
   return 0;
 }
