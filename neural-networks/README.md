@@ -1,3 +1,13 @@
+# Dataset
+
+```sh
+#!/bin/bash
+curl -L -o ./mnist-dataset.zip \
+  https://www.kaggle.com/api/v1/datasets/download/hojjatk/mnist-dataset
+```
+
+
+
 # Timing:
 
 5 iterations: Time 53929.363 milliseconds

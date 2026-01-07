@@ -12,6 +12,7 @@
 #include <set>
 #include <sstream>
 #include <stack>
+#include <chrono>
 #include <stdio.h>
 #include <string>
 #include <time.h>
@@ -89,7 +90,9 @@ typedef pair<int, int> ii;
 typedef vector<ii> vii;
 
 
-
+random_device rd;
+mt19937 rng(chrono::steady_clock::now().time_since_epoch().count());
+normal_distribution<double> norm_dist(0.0, 1.0);
 
 template<class T>
 vector<T> sigmoid(const vector<T> &a) {
@@ -131,13 +134,18 @@ inline float sig(float x) {
 
 int main(int argc, const char **argv) {
 
-  for (float i = -10000; i <= 10000; i+=10) {
-    ps(sig(i));
-    float e = exp(-i);
+  // for (float i = -10000; i <= 10000; i+=10) {
+  //   ps(sig(i));
+  //   float e = exp(-i);
 
-    ps(e/((1+e)*(1+e)));
-    ps(sig(i) * (1 - sig(i)));
+  //   ps(e/((1+e)*(1+e)));
+  //   ps(sig(i) * (1 - sig(i)));
+  // }
+
+  for (int i = 0; i < 100; ++i) {
+    cout << norm_dist(rng) << endl;
   }
+
 
   return 0;
 }

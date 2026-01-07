@@ -613,7 +613,7 @@ int main(int argc, const char **argv) {
   ios_base::sync_with_stdio(0); cin.tie(0); cout.tie(0);
 #endif
 
-  using T = float;
+  using T = double;
   clock_t t_clock = clock();
 
   const string train_name = "train";
