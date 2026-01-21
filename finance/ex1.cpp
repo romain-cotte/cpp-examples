@@ -200,48 +200,5 @@ int main(int argc, const char **argv) {
   ps("Value at risk  5%", value_at_risk(student_returns, 0.1));
   ps("Value at risk 10%", value_at_risk(student_returns, 0.05));
 
-
-  {
-    // Initial price
-    double S0 = 100.0;
-    // Strike
-    double K = 100.0;
-    // Rate without risk
-    double r = 0.05;
-    // Volatility
-    double sigma = 0.2;
-    // Maturity in year
-    double T = 1.0;
-    normal_distribution<double> normal(0.0, 1.0);
-
-
-    // double x = normal(gen);
-    // double St = S0 * exp((r-(sigma*sigma/2))*t+sigma*sqrt(t)*x);
-    // cout << St << endl;
-
-    for (int N = 100; N <= 10'000'000; N*=10) {
-      double payoff_sum = 0;
-      double payoff_sq_sum = 0;
-
-      for (int i = 0; i < N; ++i) {
-        double Z = normal(gen);
-        double ST = S0 * exp((r-(sigma*sigma/2))*T+sigma*sqrt(T)*Z);
-        double payoff = max(ST-K, 0.0);
-        payoff_sum += payoff;
-        payoff_sq_sum += payoff * payoff;
-      }
-
-      double mean_payoff = payoff_sum / N;
-      double price = exp(-r*T) * mean_payoff;
-      double variance = payoff_sq_sum / N - mean_payoff * mean_payoff;
-      double std_error = exp(-r * T) * sqrt(variance / N);
-
-      cout << "N                : " << N << endl;
-      cout << "Monte-Carlo Price: " << price << endl;
-      cout << "Standard error   : " << std_error << endl;
-      cout << "-------------------" << endl;
-    }
-  }
   return 0;
 }
-
